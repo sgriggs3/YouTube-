@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Container } from '@mui/material';
+import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
+import { AppBar, Toolbar, Typography, Container, Button } from '@mui/material';
 import ChatView from './webui/components/chat/ChatView';
 import HistoryView from './webui/components/history/HistoryView';
 import SettingsView from './webui/components/settings/SettingsView';
@@ -84,27 +84,60 @@ const App = () => {
   return (
     <ExtensionStateContextProvider>
       <Router>
-        {showWelcome ? (
-          <WelcomeView />
-        ) : (
-          <>
-            {showSettings && <SettingsView onDone={() => setShowSettings(false)} />}
-            {showHistory && <HistoryView onDone={() => setShowHistory(false)} />}
-            {showMcp && <McpView onDone={() => setShowMcp(false)} />}
-            {showAnalysis && <AnalysisView metadata={metadata} sentiment={sentiment} onDone={() => setShowAnalysis(false)} />}
-            <ChatView
-              showHistoryView={() => {
-                setShowSettings(false);
-                setShowMcp(false);
-                setShowAnalysis(false);
-                setShowHistory(true);
-              }}
-              isHidden={showSettings || showHistory || showMcp || showAnalysis}
-              showAnnouncement={showAnnouncement}
-              hideAnnouncement={() => setShowAnnouncement(false)}
-            />
-          </>
-        )}
+        <AppBar position="static" color="primary">
+          <Toolbar>
+            <Typography variant="h6" style={{ flexGrow: 1 }}>
+              YouTube Insight Analyzer
+            </Typography>
+            <Button color="inherit" component={Link} to="/settings">
+              Settings
+            </Button>
+            <Button color="inherit" component={Link} to="/analysis">
+              Analysis
+            </Button>
+          </Toolbar>
+        </AppBar>
+        <Container style={{ marginTop: '20px' }}>
+          <Routes>
+            <Route path="/" element={<WelcomeView />} />
+            <Route path="/settings" element={<SettingsView />} />
+            <Route path="/history" element={<HistoryView />} />
+            <Route path="/mcp" element={<McpView />} />
+            <Route path="/analysis" element={<AnalysisView metadata={metadata} sentiment={sentiment} />} />
+          </Routes>
+          <div>
+            <h1>YouTube Sentiment Analysis</h1>
+            <form onSubmit={(e) => {
+              e.preventDefault();
+              fetchVideoMetadata(videoId);
+            }}>
+              <input
+                type="text"
+                value={videoId}
+                onChange={(e) => setVideoId(e.target.value)}
+                placeholder="Enter YouTube Video ID"
+              />
+              <button type="submit">Analyze</button>
+            </form>
+            {error && (
+              <div style={{ color: 'red' }}>
+                Error: {error}
+              </div>
+            )}
+            {metadata && (
+              <div>
+                <h2>Video Metadata</h2>
+                <pre>{JSON.stringify(metadata, null, 2)}</pre>
+              </div>
+            )}
+            {sentiment && (
+              <div>
+                <h2>Sentiment Analysis</h2>
+                <pre>{JSON.stringify(sentiment, null, 2)}</pre>
+              </div>
+            )}
+          </div>
+        </Container>
       </Router>
     </ExtensionStateContextProvider>
   );

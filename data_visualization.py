@@ -367,3 +367,37 @@ class RealtimeVisualizer:
             "topic_distribution": create_topic_distribution(data),
             "engagement_metrics": create_engagement_metrics(data),
         }
+
+
+def create_basic_charts(data, output_dir):
+    """Generate basic charts and graphs using matplotlib and plotly."""
+    if not os.path.exists(output_dir):
+        os.makedirs(output_dir)
+
+    # Line Chart
+    plt.figure(figsize=(10, 6))
+    plt.plot(data["date"], data["sentiment"], marker="o")
+    plt.title("Sentiment Analysis")
+    plt.xlabel("Date")
+    plt.ylabel("Sentiment Score")
+    plt.grid(True)
+    line_chart_path = os.path.join(output_dir, "line_chart.html")
+    plt.savefig(line_chart_path)
+    plt.close()
+
+    # Bar Chart
+    fig = px.bar(data, x="date", y="sentiment", title="Sentiment Bar Chart")
+    bar_chart_path = os.path.join(output_dir, "bar_chart.html")
+    fig.write_html(bar_chart_path)
+
+    # Pie Chart
+    sentiment_counts = data["sentiment"].value_counts()
+    fig = px.pie(sentiment_counts, values=sentiment_counts.values, names=sentiment_counts.index, title="Sentiment Pie Chart")
+    pie_chart_path = os.path.join(output_dir, "pie_chart.html")
+    fig.write_html(pie_chart_path)
+
+    return {
+        "line_chart": line_chart_path,
+        "bar_chart": bar_chart_path,
+        "pie_chart": pie_chart_path
+    }
