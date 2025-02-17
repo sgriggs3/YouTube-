@@ -2,7 +2,7 @@ import React, { useEffect, useState, useCallback } from "react";
 import { vscode } from "../../utils/vscode";
 import { VSCodeProgressRing } from "@vscode/webview-ui-toolkit/react";
 import PropTypes from "prop-types";
-import { Card, CardContent, Typography, Grid } from '@mui/material';
+import { Card, CardContent, Typography, Grid, Button, Container, TextField, Paper } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 
 interface VideoMetadata {
@@ -30,6 +30,19 @@ const useStyles = makeStyles({
     margin: '20px',
     borderRadius: '12px',
     boxShadow: '0 4px 12px rgba(0,0,0,0.1)',
+  },
+  container: {
+    marginTop: '20px',
+  },
+  paper: {
+    padding: '20px',
+    marginTop: '20px',
+  },
+  textField: {
+    marginBottom: '20px',
+  },
+  button: {
+    marginTop: '20px',
   },
 });
 
@@ -154,50 +167,53 @@ if (comments.length === 0 && metadata === null) {
 }
 
 return (
-  <div className= "analysis-container" >
-  <button onClick={ handleRefresh }> Refresh </button>
-    < h2 > { metadata?.title } </h2>
-    < div className = "metadata-grid" >
-      <div className="metadata-item" >
-        <label>Views: </label>
-          < span > { metadata?.views.toLocaleString() } </span>
-          </div>
-          < div className = "metadata-item" >
-            <label>Likes: </label>
-              < span > { metadata?.likes.toLocaleString() } </span>
-              </div>
-              < div className = "metadata-item" >
-                <label>Published: </label>
-                  <span>
-{
-  metadata?.publishedAt
-  ? new Date(metadata.publishedAt).toLocaleDateString()
-  : ""
-}
-</span>
-  </div>
-  </div>
-  < p className = "description" > { metadata?.description } </p>
-    < h2 > Analysis </h2>
-    < Grid container spacing = { 2} >
-    {
-      comments.map((comment, index) => (
-        <Grid item xs = { 12} sm = { 6} md = { 4} key = { index } >
-        <Card className={ classes.card } >
-      <CardContent>
-      <Typography variant="h6" > { comment.author } </Typography>
-      < Typography variant = "body2" > { comment.text } </Typography>
-      < Typography variant = "body2" > Sentiment: { comment.sentiment } </Typography>
-      < Typography variant = "body2" >
-      Timestamp: { new Date(comment.timestamp).toLocaleString() }
+  <Container className={classes.container}>
+    <Paper className={classes.paper}>
+      <Button variant="contained" color="primary" onClick={handleRefresh} className={classes.button}>
+        Refresh
+      </Button>
+      <Typography variant="h4" gutterBottom>
+        {metadata?.title}
       </Typography>
-      </CardContent>
-      </Card>
+      <Grid container spacing={2}>
+        <Grid item xs={12} sm={6}>
+          <Typography variant="body1">
+            <strong>Views:</strong> {metadata?.views.toLocaleString()}
+          </Typography>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Typography variant="body1">
+            <strong>Likes:</strong> {metadata?.likes.toLocaleString()}
+          </Typography>
+        </Grid>
+        <Grid item xs={12} sm={6}>
+          <Typography variant="body1">
+            <strong>Published:</strong> {metadata?.publishedAt ? new Date(metadata.publishedAt).toLocaleDateString() : ""}
+          </Typography>
+        </Grid>
       </Grid>
-      ))
-    }
+      <Typography variant="body2" className={classes.textField}>
+        {metadata?.description}
+      </Typography>
+      <Typography variant="h5" gutterBottom>
+        Analysis
+      </Typography>
+      <Grid container spacing={2}>
+        {comments.map((comment, index) => (
+          <Grid item xs={12} sm={6} md={4} key={index}>
+            <Card className={classes.card}>
+              <CardContent>
+                <Typography variant="h6">{comment.author}</Typography>
+                <Typography variant="body2">{comment.text}</Typography>
+                <Typography variant="body2">Sentiment: {comment.sentiment}</Typography>
+                <Typography variant="body2">Timestamp: {new Date(comment.timestamp).toLocaleString()}</Typography>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
       </Grid>
-      </div>
+    </Paper>
+  </Container>
   );
 };
 

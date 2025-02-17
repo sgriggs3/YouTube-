@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, Typography, Switch, FormControlLabel, TextField, Button } from '@mui/material';
+import { Card, CardContent, Typography, Switch, FormControlLabel, TextField, Button, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 import axios from 'axios';
 
@@ -18,6 +18,7 @@ const SettingsView: React.FC = () => {
 	const [apiKey, setApiKey] = useState('');
 	const [baseUrl, setBaseUrl] = useState('');
 	const [model, setModel] = useState('');
+	const [provider, setProvider] = useState('');
 	const [error, setError] = useState('');
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -29,6 +30,7 @@ const SettingsView: React.FC = () => {
 				apiKey,
 				baseUrl,
 				model,
+				provider,
 			});
 			console.log('Settings updated:', response.data);
 		} catch (err) {
@@ -45,6 +47,20 @@ const SettingsView: React.FC = () => {
 						Modern Settings
 					</Typography>
 					<form onSubmit={handleSubmit}>
+						<FormControl fullWidth margin="normal">
+							<InputLabel>API Provider</InputLabel>
+							<Select
+								value={provider}
+								onChange={(e) => setProvider(e.target.value)}
+								label="API Provider"
+							>
+								<MenuItem value="openrouter">OpenRouter</MenuItem>
+								<MenuItem value="anthropic">Anthropic</MenuItem>
+								<MenuItem value="google">Google Gemini</MenuItem>
+								<MenuItem value="azure">Azure</MenuItem>
+								<MenuItem value="aws">AWS</MenuItem>
+							</Select>
+						</FormControl>
 						<TextField
 							label="API Key"
 							variant="outlined"
