@@ -176,43 +176,45 @@ const App = () => {
             </Button>
           </Toolbar>
         </AppBar>
-        <Container style={{ marginTop: '20px' }}>
-          <Routes>
-            <Route path="/" element={<AppContent />} />
-            <Route path="/settings" element={<SettingsView />} />
-            <Route path="/analysis" element={<AnalysisView />} />
-            {/* ...other routes... */}
-          </Routes>
-          <div>
-            <h1>YouTube Sentiment Analysis</h1>
-            <form onSubmit={handleSubmit}>
-              <input
-                type="text"
-                value={videoId}
-                onChange={(e) => setVideoId(e.target.value)}
-                placeholder="Enter YouTube Video ID"
-              />
-              <button type="submit">Analyze</button>
-            </form>
-            {error && (
-              <div style={{ color: 'red' }}>
-                Error: {error}
-              </div>
-            )}
-            {metadata && (
-              <div>
-                <h2>Video Metadata</h2>
-                <pre>{JSON.stringify(metadata, null, 2)}</pre>
-              </div>
-            )}
-            {sentiment && (
-              <div>
-                <h2>Sentiment Analysis</h2>
-                <pre>{JSON.stringify(sentiment, null, 2)}</pre>
-              </div>
-            )}
-          </div>
-        </Container>
+        <div className="wrapper"> {/* Added wrapper div */}
+          <Container style={{ marginTop: '20px' }}>
+            <Routes>
+              <Route path="/" element={<AppContent />} />
+              <Route path="/settings" element={<SettingsView />} />
+              <Route path="/analysis" element={<AnalysisView />} />
+              {/* ...other routes... */}
+            </Routes>
+            <div>
+              <h1>YouTube Sentiment Analysis</h1>
+              <form onSubmit={handleSubmit}>
+                <input
+                  type="text"
+                  value={videoId}
+                  onChange={(e) => setVideoId(e.target.value)}
+                  placeholder="Enter YouTube Video ID"
+                />
+                <button type="submit">Analyze</button>
+              </form>
+              {error && (
+                <div style={{ color: 'red' }}>
+                  Error: {error}
+                </div>
+              )}
+              {metadata && (
+                <div>
+                  <h2>Video Metadata</h2>
+                  <pre>{JSON.stringify(metadata, null, 2)}</pre>
+                </div>
+              )}
+              {sentiment && (
+                <div>
+                  <h2>Sentiment Analysis</h2>
+                  <pre>{JSON.stringify(sentiment, null, 2)}</pre>
+                </div>
+              )}
+            </div>
+          </Container>
+        </div> {/* Close wrapper div */}
       </Router>
     </ExtensionStateContextProvider>
   );
