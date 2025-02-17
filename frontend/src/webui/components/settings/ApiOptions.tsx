@@ -705,4 +705,143 @@ const ApiOptions = ({ showModelOptions, apiErrorMessage, modelIdErrorMessage }: 
 					<VSCodeTextField
 						value={apiConfiguration?.ollamaModelId || ""}
 						style={{ width: "100%" }}
-						onInput
+						onInput={handleInputChange("ollamaModelId")}
+						placeholder={"e.g. meta-llama-3.1-8b-instruct"}>
+						<span style={{ fontWeight: 500 }}>Model ID</span>
+					</VSCodeTextField>
+					{ollamaModels.length > 0 && (
+						<VSCodeRadioGroup
+							value={
+								ollamaModels.includes(apiConfiguration?.ollamaModelId || "")
+									? apiConfiguration?.ollamaModelId
+									: ""
+							}
+							onChange={(e) => {
+								const value = (e.target as HTMLInputElement)?.value
+								// need to check value first since radio group returns empty string sometimes
+								if (value) {
+									handleInputChange("ollamaModelId")({
+										target: { value },
+									})
+								}
+							}}>
+							{ollamaModels.map((model) => (
+								<VSCodeRadio
+									key={model}
+									value={model}
+									checked={apiConfiguration?.ollamaModelId === model}>
+									{model}
+								</VSCodeRadio>
+							))}
+						</VSCodeRadioGroup>
+					)}
+					<p
+						style={{
+							fontSize: "12px",
+							marginTop: "5px",
+							color: "var(--vscode-descriptionForeground)",
+						}}>
+						Ollama allows you to run models locally on your computer. For instructions on how to get started,
+						see their
+						<VSCodeLink href="https://ollama.com/docs" style={{ display: "inline", fontSize: "inherit" }}>
+							quickstart guide.
+						</VSCodeLink>
+						You will also need to start Ollama's{" "}
+						<VSCodeLink
+							href="https://ollama.com/docs/server"
+							style={{ display: "inline", fontSize: "inherit" }}>
+							local server
+						</VSCodeLink>{" "}
+						feature to use it with this extension.{" "}
+						<span style={{ color: "var(--vscode-errorForeground)" }}>
+							(<span style={{ fontWeight: 500 }}>Note:</span> Cline uses complex prompts and works best
+							with Claude models. Less capable models may not work as expected.)
+						</span>
+					</p>
+				</div>
+			)}
+
+			{showModelOptions && (
+				<Fragment>
+					<div className="dropdown-container">
+						<label htmlFor="model-id">
+							<span style={{ fontWeight: 500 }}>Model</span>
+						</label>
+						{selectedProvider === "anthropic" && createDropdown(anthropicModels)}
+						{selectedProvider === "gemini" && createDropdown(geminiModels)}
+						{selectedProvider === "deepseek" && createDropdown(deepSeekModels)}
+						{selectedProvider === "vertex" && createDropdown(vertexModels)}
+						{selectedProvider === "bedrock" && createDropdown(bedrockModels)}
+						{selectedProvider === "openai-native" && createDropdown(openAiNativeModels)}
+						{selectedProvider === "openai" && (
+							<VSCodeTextField
+								value={selectedModelId}
+								style={{ width: "100%" }}
+								onInput={handleInputChange("apiModelId")}
+								placeholder={"Enter Model ID..."}
+							/>
+						)}
+						{selectedProvider === "openrouter" && (
+							<OpenRouterModelPicker
+								selectedModelId={selectedModelId}
+								onModelSelect={(modelId) => {
+									handleInputChange("apiModelId")({
+										target: { value: modelId },
+									})
+								}}
+							/>
+						)}
+						{selectedProvider === "lmstudio" && (
+							<VSCodeTextField
+								value={selectedModelId}
+								style={{ width: "100%" }}
+								onInput={handleInputChange("apiModelId")}
+								placeholder={"Enter Model ID..."}
+							/>
+						)}
+						{selectedProvider === "ollama" && (
+							<VSCodeTextField
+								value={selectedModelId}
+								style={{ width: "100%" }}
+								onInput={handleInputChange("apiModelId")}
+								placeholder={"Enter Model ID..."}
+							/>
+						)}
+					</div>
+					{selectedProvider !== "openrouter" && (
+						<ModelInfoView
+							selectedModelId={selectedModelId}
+							modelInfo={selectedModelInfo}
+							isDescriptionExpanded={isDescriptionExpanded}
+							setIsDescriptionExpanded={setIsDescriptionExpanded}
+						/>
+					)}
+				</Fragment>
+			)}
+
+			{apiErrorMessage && (
+				<p
+					style={{
+						fontSize: "12px",
+						marginTop: 3,
+						color: "var(--vscode-errorForeground)",
+					}}>
+					{apiErrorMessage}
+				</p>
+			)}
+
+			{modelIdErrorMessage && (
+				<p
+					style={{
+						fontSize: "12px",
+						marginTop: 3,
+						color: "var(--vscode-errorForeground)",
+					}}>
+					{modelIdErrorMessage}
+				</p>
+			)}
+		</div>
+	)
+}
+
+export default memo(ApiOptions)
