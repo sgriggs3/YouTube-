@@ -135,6 +135,17 @@ def visualizations_route(video_id, chart_type):
         logger.error(f"Error generating visualization: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/settings', methods=['POST'])
+def update_settings():
+    try:
+        new_settings = request.get_json()
+        with open(os.path.join(os.path.dirname(__file__), '../config.json'), 'w') as f:
+            json.dump(new_settings, f, indent=4)
+        return jsonify({'message': 'Settings updated successfully'})
+    except Exception as e:
+        logger.error(f"Error updating settings: {e}")
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     is_production = os.environ.get('FLASK_ENV') == 'production'
     app.run(

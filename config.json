@@ -1,1 +1,18 @@
-{"youtube_api_key": "AIzaSyAvMWjhWkKdzESRrqYhamg_b5-2dw3kGH4", "data_storage_path": ".", "sentiment_model": "vader", "web_ui_port": 5000}
+{
+  "youtube_api_key": "AIzaSyAvMWjhWkKdzESRrqYhamg_b5-2dw3kGH4",
+  "data_storage_path": ".",
+  "sentiment_model": "vader",
+  "web_ui_port": 5000,
+  "api_keys": {
+    "openrouter": "",
+    "anthropic": "",
+    "gemini": "",
+    "deepseek": "",
+    "vertex": "",
+    "bedrock": "",
+    "openai_native": "",
+    "openai": ""
+  },
+  "custom_base_url": "",
+  "model_selection": ""
+}
