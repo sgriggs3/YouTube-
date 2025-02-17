@@ -12,3 +12,6 @@ google-auth-oauthlib
 websockets
 youtube_transcript_api
 transformers
+psycopg2-binary
+celery
+redis

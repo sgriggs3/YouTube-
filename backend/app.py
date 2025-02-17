@@ -13,7 +13,6 @@ from data_visualization import (
     create_engagement_visualization,
     create_basic_charts
 )
-from utils import extract_video_id, setup_logging
 
 app = Flask(__name__)
 CORS(app)
@@ -85,6 +84,8 @@ def sentiment_trends_route():
     except Exception as e:
         logger.error(f"Error generating sentiment trends: {e}")
         return jsonify({'error': str(e)}), 500
+    finally:
+        clean_temporary_files('.', r'sentiment_trends_.*\.html')
 
 @app.route('/api/wordcloud', methods=['POST'])
 def wordcloud_route():
@@ -96,6 +97,8 @@ def wordcloud_route():
     except Exception as e:
         logger.error(f"Error generating wordcloud: {e}")
         return jsonify({'error': str(e)}), 500
+    finally:
+        clean_temporary_files('.', r'wordcloud_.*\.png')
 
 @app.route('/api/sentiment/distribution', methods=['POST'])
 def sentiment_distribution_route():
@@ -107,6 +110,8 @@ def sentiment_distribution_route():
     except Exception as e:
         logger.error(f"Error generating sentiment distribution: {e}")
         return jsonify({'error': str(e)}), 500
+    finally:
+        clean_temporary_files('.', r'distribution_.*\.html')
 
 @app.route('/api/engagement', methods=['POST'])
 def engagement_route():
@@ -118,6 +123,8 @@ def engagement_route():
     except Exception as e:
         logger.error(f"Error generating engagement visualization: {e}")
         return jsonify({'error': str(e)}), 500
+    finally:
+        clean_temporary_files('.', r'engagement_.*\.html')
 
 @app.route('/api/visualizations/<video_id>/<chart_type>')
 def visualizations_route(video_id, chart_type):
