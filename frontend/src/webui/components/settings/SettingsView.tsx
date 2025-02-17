@@ -4,6 +4,7 @@ import { useExtensionState } from "../../context/ExtensionStateContext"
 import { validateApiConfiguration, validateModelId } from "../../utils/validate"
 import { vscode } from "../../utils/vscode"
 import ApiOptions from "./ApiOptions"
+import PropTypes from "prop-types";
 
 const IS_DEV = false // FIXME: use flags when packaging
 
@@ -146,5 +147,9 @@ const SettingsView = ({ onDone }: SettingsViewProps) => {
 		</div>
 	)
 }
+
+SettingsView.propTypes = {
+	onDone: PropTypes.func.isRequired,
+};
 
 export default memo(SettingsView)
