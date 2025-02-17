@@ -1,0 +1,43 @@
+{
+    "cors": {
+        "allowed_origins": [
+            "https://*.ngrok.io",
+            "http://localhost:3000"
+        ],
+        "allowed_methods": [
+            "GET",
+            "POST",
+            "OPTIONS"
+        ],
+        "allowed_headers": [
+            "Content-Type",
+            "Authorization"
+        ],
+        "expose_headers": [
+            "Content-Length"
+        ],
+        "max_age": 600
+    },
+    "server": {
+        "host": "0.0.0.0",
+        "port": 5000,
+        "workers": 4,
+        "timeout": 30
+    },
+    "logging": {
+        "level": "INFO",
+        "format": "%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+        "file": "logs/app.log",
+        "max_size": 1048576,
+        "backup_count": 5
+    },
+    "cache": {
+        "type": "filesystem",
+        "directory": "cache",
+        "ttl": 3600
+    },
+    "cleanup": {
+        "temp_files_pattern": "^(wordcloud|sentiment_trends|distribution|engagement)_.*\\.(html|png)$",
+        "max_age": 3600
+    }
+}

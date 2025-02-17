@@ -180,7 +180,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<AppContent />} />
             <Route path="/settings" element={<SettingsView />} />
-            <Route path="/analysis" element={<AnalysisView data={[]} />} />
+            <Route path="/analysis" element={<AnalysisView />} />
             {/* ...other routes... */}
           </Routes>
           <div>
@@ -219,3 +219,4 @@ const App = () => {
 };
 
 export default App;
+See https://nodejs.org/api/ errors.html#errors_common_s ystem_errors for more infor mation (ECONNREFUSED). Proxy error: Could not prox y request /api/video?videoI d=https://youtu.be/nEaGy-SO 9vw from localhost:3000 to http://localhost:5000. See https://nodejs.org/api/ errors.html#errors_common_s ystem_errors for more infor mation (ECONNREFUSED). Proxy error: Could not prox y request /api/video?videoI d=https://youtu.be/nEaGy-SO 9vw from localhost:3000 to http://localhost:5000. See https://nodejs.org/api/ errors.html#errors_common_s ystem_errors for more infor
