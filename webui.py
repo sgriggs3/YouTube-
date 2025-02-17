@@ -18,8 +18,9 @@ import uuid
 import logging
 from functools import wraps
 from pathlib import Path
+from quart import Quart, websocket
 
-app = Flask(__name__)
+app = Quart(__name__)  # Change to Quart for async support
 
 
 # Add compression
@@ -44,7 +45,7 @@ def load_config():
     
     if config_path.exists():
         with open(config_path) as f:
-            return {**defaults, **json.load(f)}
+            return json.load(f)
     else:
         # Create default config
         with open(config_path, "w") as f:
@@ -91,7 +92,7 @@ def init_app(app):
 
 try:
     # Create Flask app
-    app = Flask(__name__)
+    app = Quart(__name__)
     app = init_app(app)
     
     # Load initial data if exists
@@ -107,9 +108,49 @@ except Exception as e:
 
 
 def load_config():
-    with open("config.json", "r") as f:
-        return json.load(f)
+    config_path = Path("config.json")
+    defaults = {
+        "web_ui_port": 5000,
+        "debug": False,
+        "api_keys": [],
+        "cache_dir": "cache",
+        "log_level": "INFO"
+    }
+    if config_path.exists():
+        with open(config_path) as f:
+            return json.load(f)
+    else:
+        with open(config_path, "w") as f:
+            json.dump(defaults, f, indent=2)
+        return defaults
 
+def init_app(app):
+    config = load_config()
+    logging.basicConfig(
+        level=getattr(logging, config.get("log_level", "INFO")),
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+        handlers=[logging.FileHandler("logs/app.log"), logging.StreamHandler()]
+    )
+    init_directories()
+    app.config.update(
+        SECRET_KEY=os.urandom(24),
+        COMPRESS_ALGORITHM=["br", "gzip"],
+        COMPRESS_LEVEL=6,
+        COMPRESS_MIN_SIZE=500,
+        TEMPLATES_AUTO_RELOAD=True
+    )
+    Compress(app)
+    CORS(app)
+    return app
+
+try:
+    app = Quart(__name__)
+    app = init_app(app)
+    # Remove duplicate re-loading or re-initializing data here.
+    # ...existing code...
+except Exception as e:
+    logging.error(f"Failed to initialize app: {e}")
+    raise
 
 config = load_config()
 web_ui_port = config.get("web_ui_port", 5000)
@@ -121,6 +162,11 @@ data = pd.read_csv("sentiment_data.csv")
 # Add performance middleware
 @app.before_request
 def before_request():
+    if request.path.startswith("/static/"):
+        # Set cache headers for static assets
+        response = make_response()
+        response.headers["Cache-Control"] = "public, max-age=31536000"
+        return response
     # Add cache headers for static assets
     if request.path.startswith("/static/"):
         return make_response(
@@ -264,26 +310,26 @@ def examples():
 
 
 @app.route("/video-metadata", methods=["GET"])
-def video_metadata():
+async def video_metadata():
     video_id = request.args.get("video_id")
-    return render_template("video_metadata.html", video_id=video_id)
+    return await render_template("video_metadata.html", video_id=video_id)
 
 
 @app.route("/sentiment-results", methods=["GET"])
-def sentiment_results():
+async def sentiment_results():
     video_id = request.args.get("video_id")
-    return render_template("sentiment_results.html", video_id=video_id)
+    return await render_template("sentiment_results.html", video_id=video_id)
 
 
 @app.route("/visualization/heatmap", methods=["GET"])
-def visualization_heatmap():
+async def visualization_heatmap():
     data = pd.read_csv("sentiment_data.csv")
     criteria = request.args.to_dict()
     if criteria:
         data = data_visualization.filter_data(data, criteria)
     filename = "heatmap.html"
-    data_visualization.create_heatmap(data, filename)
-    return render_template("visualization.html", visualization_file=filename)
+    await data_visualization.create_heatmap(data, filename)
+    return await render_template("visualization.html", visualization_file=filename)
 
 
 @app.route("/visualization/wordcloud", methods=["GET"])
@@ -606,10 +652,10 @@ async def optimized_ws_handler(websocket, path):
 
 
 async def main():
-    start_server = websockets.serve(optimized_ws_handler, "localhost", 8765)
+    start_server = websockets.serve(optimized_ws_handler, "0.0.0.0", 8765)
     flask_thread = threading.Thread(
         target=app.run,
-        kwargs={"debug": True, "port": web_ui_port, "use_reloader": False},
+        kwargs={"debug": False, "host": "0.0.0.0", "port": web_ui_port, "use_reloader": False},
     )
     flask_thread.start()
     await start_server

@@ -1,6 +1,8 @@
 import React, { useCallback, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { useEvent } from "react-use";
+import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
+import { AppBar, Toolbar, Typography, Container, Button } from '@mui/material';
 import ChatView from "./components/chat/ChatView";
 import HistoryView from "./components/history/HistoryView";
 import SettingsView from "./components/settings/SettingsView";
@@ -129,7 +131,29 @@ const App = () => {
 
   return (
     <ExtensionStateContextProvider>
-      <AppContent />
+      <Router>
+        <AppBar position="static" color="primary">
+          <Toolbar>
+            <Typography variant="h6" style={{ flexGrow: 1 }}>
+              YouTube Insight Analyzer
+            </Typography>
+            <Button color="inherit" component={Link} to="/settings">
+              Settings
+            </Button>
+            <Button color="inherit" component={Link} to="/analysis">
+              Analysis
+            </Button>
+          </Toolbar>
+        </AppBar>
+        <Container style={{ marginTop: '20px' }}>
+          <Routes>
+            <Route path="/" element={<AppContent />} />
+            <Route path="/settings" element={<SettingsView />} />
+            <Route path="/analysis" element={<AnalysisView data={[]} />} />
+            {/* ...other routes... */}
+          </Routes>
+        </Container>
+      </Router>
     </ExtensionStateContextProvider>
   );
 };
