@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Link } from 'react-router-dom';
-import { AppBar, Toolbar, Typography, Container, Button } from '@mui/material';
+import { AppBar, Toolbar, Typography, Container, Button, TextField, Paper, Grid } from '@mui/material';
 import ChatView from './webui/components/chat/ChatView';
 import HistoryView from './webui/components/history/HistoryView';
 import SettingsView from './webui/components/settings/SettingsView';
@@ -105,38 +105,49 @@ const App = () => {
             <Route path="/mcp" element={<McpView />} />
             <Route path="/analysis" element={<AnalysisView metadata={metadata} sentiment={sentiment} />} />
           </Routes>
-          <div>
-            <h1>YouTube Sentiment Analysis</h1>
+          <Paper elevation={3} style={{ padding: '20px', marginTop: '20px' }}>
+            <Typography variant="h4" gutterBottom>
+              YouTube Sentiment Analysis
+            </Typography>
             <form onSubmit={(e) => {
               e.preventDefault();
               fetchVideoMetadata(videoId);
             }}>
-              <input
-                type="text"
-                value={videoId}
-                onChange={(e) => setVideoId(e.target.value)}
-                placeholder="Enter YouTube Video ID"
-              />
-              <button type="submit">Analyze</button>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={8}>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    label="Enter YouTube Video ID"
+                    value={videoId}
+                    onChange={(e) => setVideoId(e.target.value)}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Button type="submit" variant="contained" color="primary" fullWidth>
+                    Analyze
+                  </Button>
+                </Grid>
+              </Grid>
             </form>
             {error && (
-              <div style={{ color: 'red' }}>
+              <Typography color="error" variant="body2" style={{ marginTop: '10px' }}>
                 Error: {error}
-              </div>
+              </Typography>
             )}
             {metadata && (
-              <div>
-                <h2>Video Metadata</h2>
+              <div style={{ marginTop: '20px' }}>
+                <Typography variant="h5">Video Metadata</Typography>
                 <pre>{JSON.stringify(metadata, null, 2)}</pre>
               </div>
             )}
             {sentiment && (
-              <div>
-                <h2>Sentiment Analysis</h2>
+              <div style={{ marginTop: '20px' }}>
+                <Typography variant="h5">Sentiment Analysis</Typography>
                 <pre>{JSON.stringify(sentiment, null, 2)}</pre>
               </div>
             )}
-          </div>
+          </Paper>
         </Container>
       </Router>
     </ExtensionStateContextProvider>

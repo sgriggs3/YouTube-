@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { Container, Typography, Paper, Grid, TextField, Button } from '@mui/material';
 import VideoInput from './VideoInput';
 import VideoDisplay from './VideoDisplay';
 import CommentsDisplay from './CommentsDisplay';
@@ -33,12 +34,16 @@ function App() {
   };
 
   return (
-    <div>
-      <h1>YouTube Sentiment Analysis</h1>
-      <VideoInput onVideoSubmit={handleVideoSubmit} />
-      {videoData && <VideoDisplay videoData={videoData} />}
-      {commentsData && <CommentsDisplay comments={commentsData} />}
-    </div>
+    <Container>
+      <Typography variant="h2" gutterBottom>
+        YouTube Sentiment Analysis
+      </Typography>
+      <Paper elevation={3} style={{ padding: '20px', marginTop: '20px' }}>
+        <VideoInput onVideoSubmit={handleVideoSubmit} />
+        {videoData && <VideoDisplay videoData={videoData} />}
+        {commentsData && <CommentsDisplay comments={commentsData} />}
+      </Paper>
+    </Container>
   );
 }
 

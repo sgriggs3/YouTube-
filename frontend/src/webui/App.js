@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import PropTypes from "prop-types";
 import { useEvent } from "react-use";
 import { BrowserRouter as Router, Routes, Route, Link } from "react-router-dom";
-import { AppBar, Toolbar, Typography, Container, Button } from '@mui/material';
+import { AppBar, Toolbar, Typography, Container, Button, TextField, Paper, Grid } from '@mui/material';
 import ChatView from "./components/chat/ChatView";
 import HistoryView from "./components/history/HistoryView";
 import SettingsView from "./components/settings/SettingsView";
@@ -183,35 +183,46 @@ const App = () => {
             <Route path="/analysis" element={<AnalysisView />} />
             {/* ...other routes... */}
           </Routes>
-          <div>
-            <h1>YouTube Sentiment Analysis</h1>
+          <Paper elevation={3} style={{ padding: '20px', marginTop: '20px' }}>
+            <Typography variant="h4" gutterBottom>
+              YouTube Sentiment Analysis
+            </Typography>
             <form onSubmit={handleSubmit}>
-              <input
-                type="text"
-                value={videoId}
-                onChange={(e) => setVideoId(e.target.value)}
-                placeholder="Enter YouTube Video ID"
-              />
-              <button type="submit">Analyze</button>
+              <Grid container spacing={2}>
+                <Grid item xs={12} sm={8}>
+                  <TextField
+                    fullWidth
+                    variant="outlined"
+                    label="Enter YouTube Video ID"
+                    value={videoId}
+                    onChange={(e) => setVideoId(e.target.value)}
+                  />
+                </Grid>
+                <Grid item xs={12} sm={4}>
+                  <Button type="submit" variant="contained" color="primary" fullWidth>
+                    Analyze
+                  </Button>
+                </Grid>
+              </Grid>
             </form>
             {error && (
-              <div style={{ color: 'red' }}>
+              <Typography color="error" variant="body2" style={{ marginTop: '10px' }}>
                 Error: {error}
-              </div>
+              </Typography>
             )}
             {metadata && (
-              <div>
-                <h2>Video Metadata</h2>
+              <div style={{ marginTop: '20px' }}>
+                <Typography variant="h5">Video Metadata</Typography>
                 <pre>{JSON.stringify(metadata, null, 2)}</pre>
               </div>
             )}
             {sentiment && (
-              <div>
-                <h2>Sentiment Analysis</h2>
+              <div style={{ marginTop: '20px' }}>
+                <Typography variant="h5">Sentiment Analysis</Typography>
                 <pre>{JSON.stringify(sentiment, null, 2)}</pre>
               </div>
             )}
-          </div>
+          </Paper>
         </Container>
       </Router>
     </ExtensionStateContextProvider>
@@ -219,4 +230,3 @@ const App = () => {
 };
 
 export default App;
-See https://nodejs.org/api/ errors.html#errors_common_s ystem_errors for more infor mation (ECONNREFUSED). Proxy error: Could not prox y request /api/video?videoI d=https://youtu.be/nEaGy-SO 9vw from localhost:3000 to http://localhost:5000. See https://nodejs.org/api/ errors.html#errors_common_s ystem_errors for more infor mation (ECONNREFUSED). Proxy error: Could not prox y request /api/video?videoI d=https://youtu.be/nEaGy-SO 9vw from localhost:3000 to http://localhost:5000. See https://nodejs.org/api/ errors.html#errors_common_s ystem_errors for more infor
