@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { vscode } from "../../utils/vscode";
 import { VSCodeProgressRing } from "@vscode/webview-ui-toolkit/react";
+import PropTypes from "prop-types";
 
 interface VideoMetadata {
   title: string;
@@ -207,6 +208,11 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ videoId, onDone }) => {
       </div>
     </div>
   );
+};
+
+AnalysisView.propTypes = {
+  videoId: PropTypes.string,
+  onDone: PropTypes.func.isRequired,
 };
 
 export default AnalysisView;
