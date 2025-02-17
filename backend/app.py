@@ -3,6 +3,7 @@ from flask_cors import CORS
 import logging
 import os
 import re
+import json
 from uuid import uuid4
 from youtube_api import authenticate_youtube_api, get_video_metadata, get_video_comments
 from sentiment_analysis import analyze_sentiment, generate_sentiment_trends
@@ -11,7 +12,6 @@ from data_visualization import (
     create_sentiment_distribution,
     create_engagement_visualization
 )
-from utils import extract_video_id, setup_logging
 
 app = Flask(__name__)
 CORS(app)
@@ -78,6 +78,8 @@ def sentiment_trends_route():
     except Exception as e:
         logger.error(f"Error generating sentiment trends: {e}")
         return jsonify({'error': str(e)}), 500
+    finally:
+        clean_temporary_files('.', r'sentiment_trends_.*\.html')
 
 @app.route('/api/wordcloud', methods=['POST'])
 def wordcloud_route():
@@ -89,6 +91,8 @@ def wordcloud_route():
     except Exception as e:
         logger.error(f"Error generating wordcloud: {e}")
         return jsonify({'error': str(e)}), 500
+    finally:
+        clean_temporary_files('.', r'wordcloud_.*\.png')
 
 @app.route('/api/sentiment/distribution', methods=['POST'])
 def sentiment_distribution_route():
@@ -100,6 +104,8 @@ def sentiment_distribution_route():
     except Exception as e:
         logger.error(f"Error generating sentiment distribution: {e}")
         return jsonify({'error': str(e)}), 500
+    finally:
+        clean_temporary_files('.', r'distribution_.*\.html')
 
 @app.route('/api/engagement', methods=['POST'])
 def engagement_route():
@@ -111,6 +117,8 @@ def engagement_route():
     except Exception as e:
         logger.error(f"Error generating engagement visualization: {e}")
         return jsonify({'error': str(e)}), 500
+    finally:
+        clean_temporary_files('.', r'engagement_.*\.html')
 
 if __name__ == '__main__':
     is_production = os.environ.get('FLASK_ENV') == 'production'
