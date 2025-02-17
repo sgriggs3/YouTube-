@@ -10,7 +10,8 @@ from sentiment_analysis import analyze_sentiment, generate_sentiment_trends
 from data_visualization import (
     create_wordcloud,
     create_sentiment_distribution,
-    create_engagement_visualization
+    create_engagement_visualization,
+    create_basic_charts
 )
 from utils import extract_video_id, setup_logging
 
@@ -116,6 +117,22 @@ def engagement_route():
         return send_file(filename)
     except Exception as e:
         logger.error(f"Error generating engagement visualization: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/visualizations/<video_id>/<chart_type>')
+def visualizations_route(video_id, chart_type):
+    try:
+        video_id = extract_video_id(video_id)
+        comments = get_video_comments(youtube, video_id)
+        output_dir = 'visualizations'
+        charts = create_basic_charts(comments, output_dir)
+        chart_file = charts.get(chart_type)
+        if chart_file:
+            return send_file(chart_file)
+        else:
+            return jsonify({'error': 'Invalid chart type'}), 400
+    except Exception as e:
+        logger.error(f"Error generating visualization: {e}")
         return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':

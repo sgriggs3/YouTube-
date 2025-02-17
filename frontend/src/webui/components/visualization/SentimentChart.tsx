@@ -1,5 +1,6 @@
 import React, { useEffect, useRef } from "react"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { LineChart, Line, BarChart, Bar, PieChart, Pie, Cell, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import Plot from 'react-plotly.js';
 
 interface SentimentData {
 	timestamp: number
@@ -10,9 +11,12 @@ interface SentimentData {
 interface Props {
 	data: SentimentData[]
 	loading?: boolean
+	chartType: "line" | "bar" | "pie"
 }
 
-export const SentimentChart: React.FC<Props> = ({ data, loading }) => {
+const COLORS = ["#8884d8", "#82ca9d", "#ffc658"]
+
+export const SentimentChart: React.FC<Props> = ({ data, loading, chartType }) => {
 	const chartRef = useRef(null)
 
 	useEffect(() => {
@@ -25,22 +29,59 @@ export const SentimentChart: React.FC<Props> = ({ data, loading }) => {
 		return <VSCodeProgressRing />
 	}
 
+	const renderChart = () => {
+		switch (chartType) {
+			case "bar":
+				return (
+					<Plot
+						data={[
+							{
+								x: data.map(d => new Date(d.timestamp).toLocaleDateString()),
+								y: data.map(d => d.sentiment),
+								type: 'bar',
+								marker: { color: '#8884d8' },
+							},
+						]}
+						layout={{ title: 'Sentiment Bar Chart' }}
+					/>
+				)
+			case "pie":
+				return (
+					<Plot
+						data={[
+							{
+								values: data.map(d => d.sentiment),
+								labels: data.map(d => new Date(d.timestamp).toLocaleDateString()),
+								type: 'pie',
+								marker: { colors: COLORS },
+							},
+						]}
+						layout={{ title: 'Sentiment Pie Chart' }}
+					/>
+				)
+			case "line":
+			default:
+				return (
+					<Plot
+						data={[
+							{
+								x: data.map(d => new Date(d.timestamp).toLocaleDateString()),
+								y: data.map(d => d.sentiment),
+								type: 'scatter',
+								mode: 'lines+markers',
+								marker: { color: '#8884d8' },
+							},
+						]}
+						layout={{ title: 'Sentiment Line Chart' }}
+					/>
+				)
+		}
+	}
+
 	return (
 		<div className="chart-container">
 			<ResponsiveContainer width="100%" height={300}>
-				<LineChart ref={chartRef} data={data}>
-					<CartesianGrid strokeDasharray="3 3" />
-					<XAxis
-						dataKey="timestamp"
-						tickFormatter={(timestamp) => new Date(timestamp).toLocaleDateString()}
-					/>
-					<YAxis domain={[-1, 1]} />
-					<Tooltip
-						labelFormatter={(timestamp) => new Date(timestamp).toLocaleString()}
-						formatter={(value) => [Number(value).toFixed(2), "Sentiment"]}
-					/>
-					<Line type="monotone" dataKey="sentiment" stroke="#8884d8" strokeWidth={2} dot={false} />
-				</LineChart>
+				{renderChart()}
 			</ResponsiveContainer>
 		</div>
 	)
