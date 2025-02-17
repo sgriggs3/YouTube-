@@ -21,8 +21,8 @@ interface Comment {
 }
 
 interface AnalysisViewProps {
-  videoId: string | null;
-  onDone: () => void;
+  videoId?: string;
+  onDone?: () => void;
 }
 
 const useStyles = makeStyles({
@@ -38,13 +38,11 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ videoId, onDone }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
-  const [analysisState, setAnalysisState] = useState<
-    "idle" | "loading" | "error" | "success"
-  >("idle");
+  const [analysisState, setAnalysisState] = useState<"idle" | "loading" | "error" | "success">("idle");
   const [progress, setProgress] = useState(0);
   const [progressMessage, setProgressMessage] = useState("");
   const [comments, setComments] = useState<Comment[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isFetchingData, setIsFetchingData] = useState(false);
 
   const classes = useStyles();
 
@@ -64,22 +62,6 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ videoId, onDone }) => {
     } catch (err) {
       clearTimeout(timeoutId);
       throw err;
-    }
-  };
-
-  const handleAnalyzeClick = async () => {
-    setProgress(0);
-    setProgressMessage("");
-    setAnalysisState("loading");
-    try {
-      // Placeholder for analysis logic
-      // Replace with actual analysis calls in later iterations
-      await new Promise((resolve) => setTimeout(resolve, 2000));
-      setAnalysisState("success");
-    } catch (error) {
-      console.error("Error during analysis:", error);
-      setAnalysisState("error");
-      setError("Analysis failed. Please try again.");
     }
   };
 
@@ -112,19 +94,13 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ videoId, onDone }) => {
   };
 
   const handleScrape = async () => {
-    if (!videoId) {
-      return;
-    }
+    if (!videoId) return;
     setProgress(0);
     setProgressMessage("Scraping comments...");
     try {
-      const response = await fetch(
-        `/api/comments?videoId=${videoId}&maxResults=500`
-      );
+      const response = await fetch(`/api/comments?videoId=${videoId}&maxResults=500`);
       if (!response.ok) {
-        throw new Error(
-          `Failed to scrape comments: ${response.status} ${response.statusText}`
-        );
+        throw new Error(`Failed to scrape comments: ${response.status} ${response.statusText}`);
       }
       const comments = await response.json();
       setComments(comments);
@@ -133,87 +109,31 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ videoId, onDone }) => {
     }
   };
 
+  const fetchData = async () => {
+    if (!videoId || isFetchingData) return;
+    setIsFetchingData(true);
+    setError(null);
+    try {
+      await fetchMetadata();
+      await fetchComments();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+    } finally {
+      setIsFetchingData(false);
+    }
+  };
+
   const handleRefresh = () => {
-    fetchMetadata();
-    fetchComments();
+    fetchData();
   };
 
   useEffect(() => {
-    const updateProgress = (message: {
-      type: string;
-      progress: number;
-      message: string;
-    }) => {
-      if (message.type === "progress") {
-        setProgress(message.progress * 100);
-        setProgressMessage(message.message);
-      }
-    };
-    vscode.postMessage({ type: "registerProgressListener" });
-    window.addEventListener("message", (event: MessageEvent) => {
-      updateProgress(
-        event.data as { type: string; progress: number; message: string }
-      );
-    });
-    return () => {
-      vscode.postMessage({ type: "unregisterProgressListener" });
-      window.removeEventListener("message", updateProgress);
-    };
-  }, []);
-
-  useEffect(() => {
-    if (!videoId) return;
-
-    const fetchMetadata = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(`/api/video-metadata/${videoId}`);
-        if (!response.ok) {
-          throw new Error("Failed to fetch video metadata");
-        }
-        const data = await response.json();
-        setMetadata(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "An error occurred");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchMetadata();
-  }, [videoId]);
-
-  useEffect(() => {
-    const fetchData = async () => {
-      if (!videoId) return;
-      setIsLoading(true);
-      setError(null);
-
-      try {
-        const response = await fetch(`/api/video-metadata/${videoId}`);
-        if (!response.ok) {
-          throw new Error('Failed to fetch metadata');
-        }
-        const data = await response.json();
-        setMetadata(data);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'An error occurred');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [videoId]);
-
-  useEffect(() => {
     if (videoId) {
-      fetchMetadata();
-      fetchComments();
+      fetchData();
     }
   }, [videoId]);
 
-  if (isLoading) return <div>Loading...</div>;
+  if (loading || isFetchingData) return <div>Loading...</div>;
   if (error) return <div>Error: { error } </div>;
 
   if (analysisState === "loading") {
@@ -224,10 +144,6 @@ const AnalysisView: React.FC<AnalysisViewProps> = ({ videoId, onDone }) => {
         </div>
     );
   }
-
-if (error) {
-  return <div className="error-message" > { error } </div>;
-}
 
 if (!videoId || !comments) {
   return <div>No video ID or comments available </div>;
@@ -255,41 +171,14 @@ return (
                   <span>
 {
   metadata?.publishedAt
-    ? new Date(metadata.publishedAt).toLocaleDateString()
-    : ""
+  ? new Date(metadata.publishedAt).toLocaleDateString()
+  : ""
 }
 </span>
   </div>
   </div>
   < p className = "description" > { metadata?.description } </p>
     < h2 > Analysis </h2>
-    <ul>
-{
-  comments.map((comment) => (
-    <li key= { comment.timestamp } >
-    <p>{ comment.text } </p>
-    < p > Sentiment: { comment.sentiment } </p>
-    < p > Author: { comment.author } </p>
-    < p > Timestamp: { new Date(comment.timestamp).toLocaleString() } </p>
-  </li>
-  ))
-}
-</ul>
-  < div className = "scraping-options" >
-    <label htmlFor="comment-limit" > Comment Limit: </label>
-      < input type = "number" id = "comment-limit" defaultValue = { 500} />
-        <button onClick={ handleScrape } disabled = { loading } >
-          Scrape Comments
-            </button>
-            </div>
-            < div
-className = "progress-container"
-style = {{ display: progress > 0 ? "block" : "none" }}
-      >
-  <div className="progress-bar" style = {{ width: `${progress}%` }}>
-    { progress } % - { progressMessage }
-    </div>
-    </div>
     < Grid container spacing = { 2} >
     {
       comments.map((comment, index) => (
@@ -299,7 +188,9 @@ style = {{ display: progress > 0 ? "block" : "none" }}
       <Typography variant="h6" > { comment.author } </Typography>
       < Typography variant = "body2" > { comment.text } </Typography>
       < Typography variant = "body2" > Sentiment: { comment.sentiment } </Typography>
-      < Typography variant = "body2" > Timestamp: { new Date(comment.timestamp).toLocaleString() } </Typography>
+      < Typography variant = "body2" >
+      Timestamp: { new Date(comment.timestamp).toLocaleString() }
+      </Typography>
       </CardContent>
       </Card>
       </Grid>
@@ -308,11 +199,6 @@ style = {{ display: progress > 0 ? "block" : "none" }}
       </Grid>
       </div>
   );
-};
-
-AnalysisView.propTypes = {
-  videoId: PropTypes.string,
-  onDone: PropTypes.func.isRequired,
 };
 
 export default AnalysisView;
