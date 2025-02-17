@@ -12,10 +12,31 @@ export const ModernTheme = createGlobalStyle`
   }
 
   body {
-    background: var(--primary-bg);
+    background: linear-gradient(
+      45deg,
+      var(--primary-bg),
+      var(--secondary-bg),
+      var(--accent-color),
+      var(--primary-bg)
+    );
+    background-size: 400% 400%;
+    animation: colorBackground 10s ease infinite;
     color: var(--text-primary);
     font-family: 'Inter', -apple-system, sans-serif;
     -webkit-font-smoothing: antialiased;
+  }
+
+  // Add keyframes for moving color background
+  @keyframes colorBackground {
+    0% {
+      background-position: 0% 50%;
+    }
+    50% {
+      background-position: 100% 50%;
+    }
+    100% {
+      background-position: 0% 50%;
+    }
   }
 
   // Mobile optimizations
