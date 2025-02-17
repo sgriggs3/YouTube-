@@ -75,8 +75,10 @@ def get_video_comments(video_id, scrape_type="latest", comment_limit=500):
         total_comments += len(response.get("items", []))
 
 
-        if not next_page_token:
-            break
+        if 'nextPageToken' in response:
+            next_page_token = response['nextPageToken']
+        else:
+            break  # Break if no more pages
 
     if scrape_type == "random":
         comments = random.sample(comments, min(comment_limit, len(comments)))
