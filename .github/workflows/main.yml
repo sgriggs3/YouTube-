@@ -1,0 +1,100 @@
+name: CI/CD and Prebuild
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '0 0 * * *'  # Daily at midnight UTC
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.9'
+        cache: 'pip'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+        cache: 'npm'
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          ~/.npm
+          ~/.cache/pip
+          ~/nltk_data
+        key: ${{ runner.os }}-deps-${{ hashFiles('**/package-lock.json', '**/requirements.txt') }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        python -m nltk.downloader punkt vader_lexicon
+        npm ci
+
+    - name: Run linting
+      run: |
+        pip install pylint black
+        pylint **/*.py || true
+        black --check . || true
+        npm run lint
+
+    - name: Run tests
+      run: |
+        python -m pytest
+        npm test
+
+    - name: Build
+      run: npm run build
+
+    - name: Deploy backend
+      run: |
+        echo "Deploying backend..."
+        # Add your backend deployment commands here
+
+    - name: Deploy frontend
+      run: |
+        echo "Deploying frontend..."
+        # Add your frontend deployment commands here
+
+  prebuild:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Setup Dev Container
+      uses: devcontainers/ci@v0.3
+      with:
+        imageName: ghcr.io/${{ github.repository }}
+        cacheFrom: ghcr.io/${{ github.repository }}
+        push: always
+
+    - name: Cache Dev Container
+      uses: actions/cache@v3
+      with:
+        path: ~/.devcontainer
+        key: devcontainer-${{ hashFiles('.devcontainer/**') }}
+
+permissions:
+  contents: read
+  packages: write
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
