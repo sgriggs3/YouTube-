@@ -42,6 +42,12 @@ cd frontend
 npm start &
 FRONTEND_PID=$!
 
+# Check if ngrok is installed
+if ! command -v ngrok &> /dev/null; then
+    echo "ngrok could not be found. Please install ngrok and try again."
+    exit 1
+fi
+
 # Setup ngrok for external access
 echo "Setting up ngrok tunnel..."
 ngrok http 5000 &
