@@ -3,8 +3,9 @@ from flask_cors import CORS
 import logging
 import os
 import re
+import json
 from uuid import uuid4
-from youtube_api import authenticate_youtube_api, get_video_metadata, get_video_comments
+from youtube_api import authenticate_youtube_api, get_video_metadata, get_video_comments, youtube_api_init
 from sentiment_analysis import analyze_sentiment, generate_sentiment_trends
 from data_visualization import (
     create_wordcloud,
@@ -28,6 +29,11 @@ except Exception as e:
     logger.error(f"Failed to load config: {e}")
     config = {}
 
+# Initialize YouTube API
+youtube = youtube_api_init(config.get("youtube_api_key"))
+if youtube is None:
+    logger.error("Failed to initialize YouTube API. Please check your API key.")
+
 @app.errorhandler(404)
 def not_found(error):
     return jsonify({'error': 'Not found'}), 404
@@ -41,7 +47,7 @@ def internal_error(error):
 def get_video_metadata_route(video_id):
     try:
         video_id = extract_video_id(video_id)
-        metadata = get_video_metadata(video_id)
+        metadata = get_video_metadata(youtube, video_id)
         return jsonify(metadata)
     except Exception as e:
         logger.error(f"Error fetching video metadata: {e}")
@@ -51,7 +57,7 @@ def get_video_metadata_route(video_id):
 def get_comments_route():
     try:
         video_id = extract_video_id(request.args.get('urlOrVideoId', ''))
-        comments = get_video_comments(video_id)
+        comments = get_video_comments(youtube, video_id)
         return jsonify(comments)
     except Exception as e:
         logger.error(f"Error fetching comments: {e}")
@@ -61,7 +67,7 @@ def get_comments_route():
 def analyze_sentiment_route():
     try:
         video_id = extract_video_id(request.args.get('urlOrVideoId', ''))
-        comments = get_video_comments(video_id)
+        comments = get_video_comments(youtube, video_id)
         results = analyze_sentiment(comments)
         return jsonify(results)
     except Exception as e:

@@ -109,4 +109,67 @@ Use the forwarded remote URL to test the complete application.## TestingThe fron
 
 * Visit the remote URL in your browser and use the UI to enter a YouTube video ID for analysis.
 
+### Configuration Instructions
+
+1. **Backend Configuration:**
+    * Ensure that the `config.json` file contains the necessary API keys and configuration settings.
+    * Set the `FLASK_ENV` environment variable to `development` or `production` as needed.
+    * Configure CORS settings in `backend/app.py` to allow requests from the frontend.
+
+2. **Frontend Configuration:**
+    * Update the `frontend/src/config.js` file with the backend API URL.
+    * Ensure that the frontend environment variables are set correctly in the `.env` file.
+
+### API Endpoints
+
+1. **Video Metadata:**
+    * **Endpoint:** `/api/video-metadata/<video_id>`
+    * **Method:** GET
+    * **Description:** Fetches metadata for a given YouTube video.
+
+2. **Comments:**
+    * **Endpoint:** `/api/comments`
+    * **Method:** POST
+    * **Description:** Fetches comments for a given YouTube video.
+
+3. **Sentiment Analysis:**
+    * **Endpoint:** `/api/sentiment-analysis`
+    * **Method:** POST
+    * **Description:** Analyzes the sentiment of comments for a given YouTube video.
+
+4. **Sentiment Trends:**
+    * **Endpoint:** `/api/sentiment/trends`
+    * **Method:** GET
+    * **Description:** Generates sentiment trends for a given YouTube video.
+
+5. **Wordcloud:**
+    * **Endpoint:** `/api/wordcloud`
+    * **Method:** GET
+    * **Description:** Generates a wordcloud for a given YouTube video.
+
+6. **Sentiment Distribution:**
+    * **Endpoint:** `/api/sentiment/distribution`
+    * **Method:** GET
+    * **Description:** Generates sentiment distribution for a given YouTube video.
+
+7. **Engagement:**
+    * **Endpoint:** `/api/engagement`
+    * **Method:** GET
+    * **Description:** Generates engagement visualization for a given YouTube video.
+
+### Troubleshooting Guide
+
+1. **Common Issues:**
+    * **Issue:** `start_servers.sh` script fails to execute.
+    * **Solution:** Ensure that all dependencies are installed and the `ngrok` command is available. Check the logs for any errors.
+
+2. **Issue:** Backend server not starting.
+    * **Solution:** Verify that the `FLASK_ENV` and `PORT` environment variables are set correctly. Check the logs for any errors.
+
+3. **Issue:** Frontend server not starting.
+    * **Solution:** Ensure that all frontend dependencies are installed. Check the logs for any errors.
+
+4. **Issue:** Remote URL not accessible.
+    * **Solution:** Ensure that the `ngrok` tunnel is set up correctly and providing a remote URL. Check the logs for any errors.
+
 By following these strategies and workflow, you can significantly accelerate the deployment process for production-ready web applications, enabling faster time-to-market and iterative development cycles.
