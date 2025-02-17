@@ -1,10 +1,10 @@
 import React from 'react';
-import ReactDOM from 'react-dom';
-import App from './webui/App';
+import ReactDOM from 'react-dom/client';
+import App from './youtube_app/App'; // Import the new App component
 
-ReactDOM.render(
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
-  document.getElementById('root')
+  </React.StrictMode>
 );

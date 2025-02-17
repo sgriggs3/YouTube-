@@ -1,23 +1,37 @@
 import logging
-from flask import Flask, jsonify, request, abort
+from flask import Flask, jsonify, request, abort, Response
 from flask_cors import CORS
-import re
 import json
+import uuid
+import csv
+from io import StringIO
+import os  # Import the os module
+from backend.utils import extract_video_id
+from backend.youtube_api import get_video_details, get_comments, youtube_api_init  # Import from the new module
+from backend.sentiment_analysis import analyze_sentiment  # Import the sentiment analysis function
+from youtube_transcript_api import YouTubeTranscriptApi
 
 # Configure basic logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s %(levelname)s: %(message)s')
 
-from data_visualization import (
-    visualize_sentiment_trends,
-    create_word_cloud,
-    create_sentiment_distribution_chart,
-    visualize_user_engagement,
-)
-from youtube_api import get_video_metadata, get_video_comments
-from sentiment_analysis import perform_sentiment_analysis
-
 app = Flask(__name__)
 CORS(app)
+
+# Global variable to store the YouTube API client
+youtube = None
+
+# Load configuration
+config = {}
+try:
+    config = load_config()
+    youtube_api_key = config.get("youtube_api_key")
+    youtube = youtube_api_init(youtube_api_key)
+    if youtube is None:
+        logging.error("Failed to initialize YouTube API. Please check your API key.")
+    else:
+        logging.info("YouTube API initialized successfully.")
+except Exception as e:
+    logging.exception("Error loading configuration or initializing YouTube API")
 
 
 @app.route("/")
@@ -28,37 +42,53 @@ def index():
 @app.route("/api/sentiment/trends", methods=["POST"])
 def get_sentiment_trends():
     data = request.json
-    result = visualize_sentiment_trends(data["sentiment_data"], "sentiment_trends.html")
-    return jsonify({"status": "success", "file": "sentiment_trends.html"})
+    filename = f"sentiment_trends_{uuid.uuid4()}.html"
+    # result = visualize_sentiment_trends(data["sentiment_data"], filename) #TODO: Implement or remove before deployment
+    return jsonify({"status": "success", "file": filename})
 
 
 @app.route("/api/wordcloud", methods=["POST"])
 def get_word_cloud():
     data = request.json
-    create_word_cloud(data["text_data"], "wordcloud.png")
-    return jsonify({"status": "success", "file": "wordcloud.png"})
+    filename = f"wordcloud_{uuid.uuid4()}.png"
+    # create_word_cloud(data["text_data"], filename) #TODO: Implement or remove before deployment
+    return jsonify({"status": "success", "file": filename})
 
 
 @app.route("/api/sentiment/distribution", methods=["POST"])
 def get_sentiment_distribution():
     data = request.json
-    create_sentiment_distribution_chart(data["sentiment_data"], "distribution.html")
-    return jsonify({"status": "success", "file": "distribution.html"})
+    filename = f"distribution_{uuid.uuid4()}.html"
+    # create_sentiment_distribution_chart(data["sentiment_data"], filename) #TODO: Implement or remove before deployment
+    return jsonify({"status": "success", "file": filename})
 
 
 @app.route("/api/engagement", methods=["POST"])
 def get_user_engagement():
     data = request.json
-    visualize_user_engagement(data["engagement_data"], "engagement.html")
-    return jsonify({"status": "success", "file": "engagement.html"})
+    filename = f"engagement_{uuid.uuid4()}.html"
+    # visualize_user_engagement(data["engagement_data"], "engagement.html") #TODO: Implement or remove before deployment
+    return jsonify({"status": "success", "file": filename})
 
 
 @app.route("/api/video-metadata/<video_id>")
 def get_video_metadata_route(video_id):
-    metadata = get_video_metadata(video_id)
+    if not video_id:
+        logging.error("No videoId provided")
+        return jsonify({"error": "No videoId provided"}), 400
+    
+    # Validate video_id
+    if not isinstance(video_id, str) or len(video_id) != 11:
+        logging.error("Invalid videoId format: %s", video_id)
+        return jsonify({"error": "Invalid videoId format. Must be an 11-character string."}), 400
+
+    if youtube is None:
+        return jsonify({'error': 'YouTube API not initialized'}), 500
+
+    metadata = get_video_details(youtube, video_id)
     if metadata:
         if metadata and len(metadata) > 0:
-            video_data = metadata[0]
+            video_data = metadata['items'][0]
             return jsonify(
                 {
                     "title": video_data["snippet"]["title"],
@@ -76,83 +106,55 @@ def get_video_metadata_route(video_id):
         return jsonify({"error": "Failed to fetch video metadata"}), 500
 
 
-@app.route("/api/comments")
-def get_comments_route():
-    try:
-        url_or_video_id = request.args.get("urlOrVideoId")
-        max_results = request.args.get("maxResults", default=500, type=int)
-        video_id = None
-        if url_or_video_id:
-            # Regex to extract videoId from YouTube URL
-            match = re.search(r"(?:v=|\/embed\/|\/watch\?v=|\/shorts\/|youtu\.be\/)([\w-]{11})", url_or_video_id)
-            if match:
-                video_id = match.group(1)
-            else:
-                video_id = url_or_video_id  # Assume it's already a videoId
-
-        if not video_id:
-            logging.error("No valid videoId or URL provided")
-            return jsonify({"error": "No videoId or valid YouTube URL provided"}), 400
-
-        comments = get_video_comments(video_id, comment_limit=max_results)
-        return jsonify(comments)
-    except Exception as e:
-        logging.exception("Error fetching comments")
-        return jsonify({"error": str(e)}), 500
 
 @app.route("/api/comments/csv")
 def get_comments_csv_route():
-    video_id = request.args.get("urlOrVideoId")
+    url_or_video_id = request.args.get("urlOrVideoId")
     max_results = request.args.get("maxResults", default=500, type=int)
-    video_id_extracted = None
-    if video_id:
-        match = re.search(r"(?:v=|\/embed\/|\/watch\?v=|\/shorts\/|youtu\.be\/)([\w-]{11})", video_id)
-        if match:
-            video_id_extracted = match.group(1)
-        else:
-            video_id_extracted = video_id
+    video_id = extract_video_id(url_or_video_id)
+    if not video_id:
+        video_id = url_or_video_id
 
-    if not video_id_extracted:
+    if not video_id:
         return jsonify({"error": "No videoId or valid YouTube URL provided"}), 400
+        
+    comments = get_comments(youtube, video_id)
 
-    comments = get_video_comments(video_id_extracted, comment_limit=max_results)
-    
-    csv_filename = f"comments_{video_id_extracted}.csv"
-    csv_content = "Comment\n"  # Header
+    # Use StringIO to build the CSV in memory
+    csv_output = StringIO()
+    csv_writer = csv.writer(csv_output, quoting=csv.QUOTE_MINIMAL) # Use csv module for robust handling
+    csv_writer.writerow(["Comment"])  # Header row
     for comment in comments:
-        csv_content += f"{comment['comment'].replace('\"', '').replace(',', ';')}\n" # Basic CSV formatting, replace quotes and commas
+        csv_writer.writerow([comment.splitlines()]) # Handle newlines in comments
 
-    return jsonify({"status": "success", "file": csv_filename, "csv_content": csv_content})
-
+    # Create a Flask response with the correct MIME type
+    response = Response(csv_output.getvalue(), mimetype='text/csv')
+    response.headers['Content-Disposition'] = f'attachment; filename=comments_{video_id}.csv'
+    return response
 
 @app.route("/api/sentiment-analysis")
 def get_sentiment_analysis_route():
-    video_id = request.args.get("urlOrVideoId")
+    url_or_video_id = request.args.get("urlOrVideoId")
     max_results = request.args.get("maxResults", default=500, type=int)
-    video_id_extracted = None
-    if video_id:
-        match = re.search(r"(?:v=|\/embed\/|\/watch\?v=|\/shorts\/|youtu\.be\/)([\w-]{11})", video_id)
-        if match:
-            video_id_extracted = match.group(1)
-        else:
-            video_id_extracted = video_id
+    video_id = extract_video_id(url_or_video_id)
+    if not video_id:
+        video_id = url_or_video_id
 
-    if not video_id_extracted:
+    if not video_id:
         return jsonify({"error": "No videoId or valid YouTube URL provided"}), 400
 
-    comments_data = get_video_comments(video_id_extracted, comment_limit=max_results)
+    comments_data = get_comments(youtube, video_id)
     if not comments_data or not isinstance(comments_data, list):
         return jsonify({"error": "Failed to fetch comments for sentiment analysis"}), 500
 
     sentiment_results = []
-    for comment_item in comments_data:
-        comment_text = comment_item.get('comment', '')
+    for comment_text in comments_data:
         if comment_text:
             # Perform sentiment analysis using the function from sentiment_analysis.py
-            analysis_result = perform_sentiment_analysis([comment_text])
-            if analysis_result and not analysis_result.empty:
-                sentiment_label = analysis_result['vader_sentiment'][0]['label'] if 'vader_sentiment' in analysis_result.columns else 'neutral' # Default to neutral if vader_sentiment is not available
-                sentiment_score = analysis_result['vader_sentiment'][0]['compound'] if 'vader_sentiment' in analysis_result.columns else 0.0
+            analysis_result = analyze_sentiment(comment_text)
+            if analysis_result:
+                sentiment_label = "positive" if analysis_result['compound'] > 0 else "negative" if analysis_result['compound'] < 0 else "neutral"
+                sentiment_score = analysis_result['compound']
                 sentiment_results.append({
                     "comment": comment_text,
                     "sentiment_label": sentiment_label,
@@ -172,32 +174,91 @@ def internal_error(error):
     logging.error("500 error: %s", error)
     return jsonify({"error": "Internal server error"}), 500
 
-def load_config():
-    with open("config.json", "r") as f:
-        return json.load(f)
+@app.route('/api/video', methods=['GET'])
+def api_get_video_details():
+    video_id = request.args.get('videoId')
+    if not video_id:
+        return jsonify({'error': 'Missing videoId parameter'}), 400
+
+    if youtube is None:
+        return jsonify({'error': 'YouTube API not initialized'}), 500
+
+    video_details = get_video_details(youtube, video_id)
+    if video_details:
+        return jsonify(video_details)
+    else:
+        return jsonify({'error': 'Failed to fetch video details'}), 500
+
+@app.route('/api/comments', methods=['GET'])
+def api_get_comments():
+    video_id = request.args.get('videoId')
+    if not video_id:
+        return jsonify({'error': 'Missing videoId parameter'}), 400
+
+    if youtube is None:
+        return jsonify({'error': 'YouTube API not initialized'}), 500
         
+    comments = get_comments(youtube, video_id)
+    if comments is None:
+        return jsonify({'error': 'Failed to fetch comments'}), 500
+
+    analyzed_comments = []
+    for comment in comments:
+        sentiment = analyze_sentiment(comment)
+        analyzed_comments.append({
+            'text': comment,
+            'sentiment': sentiment
+        })
+
+    return jsonify(analyzed_comments)
+
+def load_config():
+    config = {}
+    config["youtube_api_key"] = os.environ.get("YOUTUBE_API_KEY")
+    if not config["youtube_api_key"]:
+        raise ValueError("YOUTUBE_API_KEY environment variable not set")
+
+    # Use an absolute path for config.json
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    config_path = os.path.join(script_dir, "config.json")
+
+    with open(config_path, "r") as f:
+        file_config = json.load(f)
+        config.update(file_config)  # Merge file config, env vars take precedence
+    return config
+
 def authenticate_youtube_api(api_key):
+    # TODO: Implement YouTube API authentication correctly
     return {"Authorization": f"Bearer {api_key}"}
 
-def get_video_comments(video_id, scrape_type="latest", comment_limit=500):
-    # Placeholder: return an empty list of comments
-    return []
 
+# TODO: Implement or remove before deployment
 def is_spam(comment):
     # Simple spam check placeholder
     return False
 
+# TODO: Implement or remove before deployment
 def save_scraping_progress(video_id, current_count, total):
     # Log progress (placeholder)
     logging.info("Progress for %s: %s/%s", video_id, current_count, total)
 
-def get_video_metadata(video_id, max_retries=5):
-    # Return dummy metadata data
-    return [{"snippet": {"title": "Sample Video", "description": "Description", "publishedAt": "2020-01-01T00:00:00Z"},
-             "statistics": {"viewCount": "12345", "likeCount": "678"}}]
+# TODO: Implement or remove before deployment
+def get_video_metadata(youtube, video_id, max_retries=5):
+    try:
+        request = youtube.videos().list(
+            part="snippet,contentDetails,statistics",
+            id=video_id
+        )
+        response = request.execute()
+        return response
+    except HttpError as e:
+        print(f"An error occurred: {e}")
+        return None
 
+# TODO: Implement or remove before deployment. Also, verify the correct import for YouTubeTranscriptApi
 def get_video_transcript(video_id, max_retries=5):
     try:
+        # from youtube_transcript_api import YouTubeTranscriptApi  # Placeholder
         transcript = YouTubeTranscriptApi.get_transcript(video_id)
         return transcript
     except Exception as e:
@@ -216,19 +277,17 @@ def load_data_from_json(filename):
     with open(filename, "r") as f:
         return json.load(f)
 
-def extract_video_id(url):
-    import re
-    match = re.search(r"v=([^&]+)", url)
-    return match.group(1) if match else None
+# TODO: Implement or remove before deployment
+# def handle_user_feedback(feedback, sentiment_data):
+#     # Update sentiment_data with feedback (placeholder)
+#     sentiment_data.update(feedback)
+#     return sentiment_data
 
-def handle_user_feedback(feedback, sentiment_data):
-    # Update sentiment_data with feedback (placeholder)
-    sentiment_data.update(feedback)
-    return sentiment_data
-
-def get_user_input(prompt):
-    return input(prompt)
+# TODO: Implement or remove before deployment
+# def get_user_input(prompt):
+#     return input(prompt)
 
 if __name__ == "__main__":
+    print("Starting backend server on http://0.0.0.0:5000")
     # Use host '0.0.0.0' and disable debug mode for production deployment
     app.run(host="0.0.0.0", port=5000, debug=False)

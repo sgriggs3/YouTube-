@@ -14,6 +14,37 @@ import AnalysisView from "./components/analysis/AnalysisView";
 
 const App = () => {
   const [videoMetadata, setVideoMetadata] = useState(null);
+  const [videoId, setVideoId] = useState('');
+  const [metadata, setMetadata] = useState(null);
+  const [sentiment, setSentiment] = useState(null);
+  const [error, setError] = useState(null);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setError(null); // Clear any previous errors
+    try {
+      // Fetch video metadata from backend:
+      const metaRes = await fetch(`/api/video-metadata/${videoId}`);
+      if (!metaRes.ok) {
+        throw new Error(`Failed to fetch metadata: ${metaRes.status} ${metaRes.statusText}`);
+      }
+      const metaData = await metaRes.json();
+      setMetadata(metaData);
+
+      // Fetch sentiment analysis from backend:
+      const sentRes = await fetch(`/api/sentiment-analysis?urlOrVideoId=${videoId}`);
+      if (!sentRes.ok) {
+        throw new Error(`Failed to fetch sentiment analysis: ${sentRes.status} ${sentRes.statusText}`);
+      }
+      const sentData = await sentRes.json();
+      setSentiment(sentData);
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError(err.message);
+      setMetadata(null);
+      setSentiment(null);
+    }
+  };
 
   const AppContent = () => {
     const { didHydrateState, showWelcome, shouldShowAnnouncement } = useExtensionState();
@@ -152,19 +183,39 @@ const App = () => {
             <Route path="/analysis" element={<AnalysisView data={[]} />} />
             {/* ...other routes... */}
           </Routes>
+          <div>
+            <h1>YouTube Sentiment Analysis</h1>
+            <form onSubmit={handleSubmit}>
+              <input
+                type="text"
+                value={videoId}
+                onChange={(e) => setVideoId(e.target.value)}
+                placeholder="Enter YouTube Video ID"
+              />
+              <button type="submit">Analyze</button>
+            </form>
+            {error && (
+              <div style={{ color: 'red' }}>
+                Error: {error}
+              </div>
+            )}
+            {metadata && (
+              <div>
+                <h2>Video Metadata</h2>
+                <pre>{JSON.stringify(metadata, null, 2)}</pre>
+              </div>
+            )}
+            {sentiment && (
+              <div>
+                <h2>Sentiment Analysis</h2>
+                <pre>{JSON.stringify(sentiment, null, 2)}</pre>
+              </div>
+            )}
+          </div>
         </Container>
       </Router>
     </ExtensionStateContextProvider>
   );
-};
-
-AppContent.propTypes = {
-  onDone: PropTypes.func,
-  metadata: PropTypes.object,
-  showHistoryView: PropTypes.func,
-  isHidden: PropTypes.bool,
-  showAnnouncement: PropTypes.bool,
-  hideAnnouncement: PropTypes.func,
 };
 
 export default App;
