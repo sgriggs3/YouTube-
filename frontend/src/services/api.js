@@ -42,6 +42,56 @@ const api = {
   async saveSettings(settings) {
     const response = await axios.post(`${BASE_URL}/settings`, settings);
     return response.data;
+  },
+
+  async searchComments(videoId, keyword) {
+    const response = await axios.get(`${BASE_URL}/search_comments`, {
+      params: { video_id: videoId, keyword: keyword }
+    });
+    return response.data;
+  },
+
+  async getRealTimeComments(videoId) {
+    const response = await axios.get(`${BASE_URL}/real_time_comments`, {
+      params: { video_id: videoId }
+    });
+    return response.data;
+  },
+
+  async authenticateUser(username, password) {
+    const response = await axios.post(`${BASE_URL}/login`, { username, password });
+    return response.data;
+  },
+
+  async exportData(videoId, format) {
+    const response = await axios.post(`${BASE_URL}/export_data`, { video_id: videoId, format: format });
+    return response.data;
+  },
+
+  async importData(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await axios.post(`${BASE_URL}/import_data`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+    return response.data;
+  },
+
+  async shareAnalysis(videoId, platform) {
+    const response = await axios.post(`${BASE_URL}/share_analysis`, { video_id: videoId, platform: platform });
+    return response.data;
+  },
+
+  async createCustomDashboard(dashboardConfig) {
+    const response = await axios.post(`${BASE_URL}/custom_dashboard`, { dashboard_config: dashboardConfig });
+    return response.data;
+  },
+
+  async generateReport(videoId) {
+    const response = await axios.get(`${BASE_URL}/reporting`, {
+      params: { video_id: videoId }
+    });
+    return response.data;
   }
 };
 

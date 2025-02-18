@@ -23,6 +23,12 @@ const Settings = () => {
     modelSelection: '',
     additionalSettings: '',
     theme: 'light',
+    enableAuthentication: false,
+    enableRoleBasedAccess: false,
+    exportFormat: 'json',
+    socialMediaPlatform: '',
+    customDashboardConfig: '',
+    reportingFrequency: 'daily',
   });
 
   const [providers, setProviders] = useState([]);
@@ -145,6 +151,74 @@ const Settings = () => {
             }
             label="Enable Notifications"
           />
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={settings.enableAuthentication}
+                onChange={handleChange}
+                name="enableAuthentication"
+              />
+            }
+            label="Enable User Authentication"
+          />
+
+          <FormControlLabel
+            control={
+              <Switch
+                checked={settings.enableRoleBasedAccess}
+                onChange={handleChange}
+                name="enableRoleBasedAccess"
+              />
+            }
+            label="Enable Role-Based Access Control"
+          />
+
+          <TextField
+            fullWidth
+            label="Export Format"
+            name="exportFormat"
+            value={settings.exportFormat}
+            onChange={handleChange}
+            margin="normal"
+            select
+          >
+            <MenuItem value="json">JSON</MenuItem>
+            <MenuItem value="csv">CSV</MenuItem>
+            <MenuItem value="excel">Excel</MenuItem>
+          </TextField>
+
+          <TextField
+            fullWidth
+            label="Social Media Platform"
+            name="socialMediaPlatform"
+            value={settings.socialMediaPlatform}
+            onChange={handleChange}
+            margin="normal"
+          />
+
+          <TextField
+            fullWidth
+            label="Custom Dashboard Configuration"
+            name="customDashboardConfig"
+            value={settings.customDashboardConfig}
+            onChange={handleChange}
+            margin="normal"
+          />
+
+          <TextField
+            fullWidth
+            label="Reporting Frequency"
+            name="reportingFrequency"
+            value={settings.reportingFrequency}
+            onChange={handleChange}
+            margin="normal"
+            select
+          >
+            <MenuItem value="daily">Daily</MenuItem>
+            <MenuItem value="weekly">Weekly</MenuItem>
+            <MenuItem value="monthly">Monthly</MenuItem>
+          </TextField>
 
           <Box sx={{ mt: 3 }}>
             <Button variant="contained" onClick={handleSave}>
