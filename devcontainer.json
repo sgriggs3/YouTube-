@@ -9,10 +9,12 @@
     "ms-python.python",
     "ms-toolsai.jupyter",
     "streetsidesoftware.code-spell-checker",
-    "esbenp.prettier-vscode"
+    "esbenp.prettier-vscode",
+    "dbaeumer.vscode-eslint",
+    "ms-azuretools.vscode-docker"
   ],
-  "postCreateCommand": "pip install -r requirements.txt",
-  "postStartCommand": "python -m nltk.downloader punkt vader_lexicon",
+  "postCreateCommand": "python3 -m venv .venv && . .venv/bin/activate && pip install -r requirements.txt && npm install",
+  "postStartCommand": "flask run --host=0.0.0.0 --port=8080",
   "remoteUser": "vscode",
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:1": {}
@@ -23,7 +25,8 @@
   ],
   "containerEnv": {
     "YOUTUBE_API_KEY": "${{ secrets.YOUTUBE_API_KEY }}",
-    "OPENAI_API_KEY": "${{ secrets.OPENAI_API_KEY }}"
+    "OPENAI_API_KEY": "${{ secrets.OPENAI_API_KEY }}",
+    "GEMINI_API_KEY": "${{ secrets.GEMINI_API_KEY }}"
   },
   "customizations": {
     "codespaces": {

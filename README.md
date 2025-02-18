@@ -74,3 +74,34 @@ A web application that analyzes YouTube video comments for sentiment and provide
 ## Testing
 
 Run backend tests:
+```bash
+pytest
+```
+
+Run frontend tests:
+```bash
+cd frontend
+npm test
+```
+
+## Docker Setup
+
+1. Build and start the services:
+   ```bash
+   docker-compose up --build
+   ```
+
+2. Access the frontend at `http://localhost:3000` and the backend at `http://localhost:5000`.
+
+## Codespaces Setup
+
+1. Open the repository in GitHub Codespaces.
+2. The environment will be automatically set up based on the `devcontainer.json` configuration.
+3. Start the development servers using the provided tasks or terminal commands.
+
+## Additional Information
+
+- Ensure all necessary environment variables are set in the `devcontainer.json` file.
+- Use the `postCreateCommand` to install all dependencies and set up the environment.
+- Use the `postStartCommand` to start the Flask server automatically.
+- Enable Codespaces prebuilds for the `main` and `develop` branches.
