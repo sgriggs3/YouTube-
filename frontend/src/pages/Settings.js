@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Container,
   Paper,
@@ -11,6 +11,7 @@ import {
   FormControlLabel,
   Box
 } from '@mui/material';
+import api from '../services/api';
 
 const Settings = () => {
   const [settings, setSettings] = useState({
@@ -24,6 +25,21 @@ const Settings = () => {
     theme: 'light',
   });
 
+  const [providers, setProviders] = useState([]);
+
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        const response = await api.getProviders();
+        setProviders(response);
+      } catch (error) {
+        console.error('Error fetching providers:', error);
+      }
+    };
+
+    fetchProviders();
+  }, []);
+
   const handleChange = (e) => {
     const { name, value, checked } = e.target;
     setSettings(prev => ({
@@ -32,10 +48,14 @@ const Settings = () => {
     }));
   };
 
-  const handleSave = () => {
-    localStorage.setItem('settings', JSON.stringify(settings));
-    setTheme(settings.theme);
-    // Add API call to save settings if needed
+  const handleSave = async () => {
+    try {
+      await api.saveSettings(settings);
+      localStorage.setItem('settings', JSON.stringify(settings));
+      setTheme(settings.theme);
+    } catch (error) {
+      console.error('Error saving settings:', error);
+    }
   };
 
   return (
@@ -61,9 +81,9 @@ const Settings = () => {
             onChange={handleChange}
             margin="normal"
           >
-            <MenuItem value="OpenRouter">OpenRouter</MenuItem>
-            <MenuItem value="Anthropic">Anthropic</MenuItem>
-            <MenuItem value="Google Gemini">Google Gemini</MenuItem>
+            {providers.map(provider => (
+              <MenuItem key={provider} value={provider}>{provider}</MenuItem>
+            ))}
           </Select>
 
           <TextField
