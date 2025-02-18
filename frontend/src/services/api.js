@@ -32,6 +32,16 @@ const api = {
   async getEngagementMetrics(videoId) {
     const response = await axios.get(`${BASE_URL}/engagement?urlOrVideoId=${videoId}`);
     return response.data;
+  },
+
+  async getProviders() {
+    const response = await axios.get(`${BASE_URL}/providers`);
+    return response.data;
+  },
+
+  async saveSettings(settings) {
+    const response = await axios.post(`${BASE_URL}/settings`, settings);
+    return response.data;
   }
 };
 
