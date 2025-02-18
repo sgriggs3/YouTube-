@@ -135,6 +135,32 @@ def get_visualizations(video_id):
         logger.error(f"Error generating visualizations: {e}")
         return jsonify({'error': 'Failed to generate visualizations'}), 500
 
+@app.route('/api/providers', methods=['GET'])
+def get_providers():
+    """Endpoint to fetch available API providers and models."""
+    try:
+        providers = {
+            "OpenRouter": ["Model1", "Model2"],
+            "Anthropic": ["ModelA", "ModelB"],
+            "Google Gemini": ["ModelX", "ModelY"]
+        }
+        return jsonify(providers)
+    except Exception as e:
+        logger.error(f"Error fetching providers: {e}")
+        return jsonify({'error': 'Failed to fetch providers'}), 500
+
+@app.route('/api/settings', methods=['POST'])
+def save_settings():
+    """Endpoint to save user settings."""
+    try:
+        settings = request.json
+        with open('user_settings.json', 'w') as f:
+            json.dump(settings, f, indent=4)
+        return jsonify({'message': 'Settings saved successfully'})
+    except Exception as e:
+        logger.error(f"Error saving settings: {e}")
+        return jsonify({'error': 'Failed to save settings'}), 500
+
 if __name__ == '__main__':
     is_production = os.environ.get('FLASK_ENV') == 'production'
     port = int(os.environ.get('PORT', 5000))

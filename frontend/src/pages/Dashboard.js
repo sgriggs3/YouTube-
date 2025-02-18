@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Box, 
@@ -11,15 +11,32 @@ import {
   IconButton,
 } from '@mui/material';
 import { YouTube, History, TrendingUp, Settings } from '@mui/icons-material';
+import api from '../services/api';
 
 const Dashboard = () => {
   const [videoUrl, setVideoUrl] = useState('');
+  const [providers, setProviders] = useState([]);
+  const [selectedProvider, setSelectedProvider] = useState('');
+  const [selectedModel, setSelectedModel] = useState('');
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const fetchProviders = async () => {
+      try {
+        const response = await api.getProviders();
+        setProviders(response);
+      } catch (error) {
+        console.error('Error fetching providers:', error);
+      }
+    };
+
+    fetchProviders();
+  }, []);
 
   const handleAnalyze = (e) => {
     e.preventDefault();
-    if (videoUrl) {
-      navigate(`/analysis/${encodeURIComponent(videoUrl)}`);
+    if (videoUrl && selectedProvider && selectedModel) {
+      navigate(`/analysis/${encodeURIComponent(videoUrl)}?provider=${selectedProvider}&model=${selectedModel}`);
     }
   };
 
@@ -68,10 +85,50 @@ const Dashboard = () => {
                   variant="contained"
                   size="large"
                   type="submit"
-                  disabled={!videoUrl}
+                  disabled={!videoUrl || !selectedProvider || !selectedModel}
                 >
                   Analyze Video
                 </Button>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  select
+                  fullWidth
+                  variant="outlined"
+                  label="Select API Provider"
+                  value={selectedProvider}
+                  onChange={(e) => setSelectedProvider(e.target.value)}
+                  SelectProps={{
+                    native: true,
+                  }}
+                >
+                  <option value="">Select API Provider</option>
+                  {providers.map((provider) => (
+                    <option key={provider} value={provider}>
+                      {provider}
+                    </option>
+                  ))}
+                </TextField>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <TextField
+                  select
+                  fullWidth
+                  variant="outlined"
+                  label="Select Model"
+                  value={selectedModel}
+                  onChange={(e) => setSelectedModel(e.target.value)}
+                  SelectProps={{
+                    native: true,
+                  }}
+                >
+                  <option value="">Select Model</option>
+                  {selectedProvider && providers[selectedProvider]?.map((model) => (
+                    <option key={model} value={model}>
+                      {model}
+                    </option>
+                  ))}
+                </TextField>
               </Grid>
             </Grid>
           </form>
