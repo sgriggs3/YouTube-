@@ -15,6 +15,7 @@ const SentimentChart = ({ data }) => {
     ],
     labels: ['Positive', 'Negative', 'Neutral'],
     type: 'pie',
+    hoverinfo: 'label+percent+value', // Add tooltip info
     marker: {
       colors: ['#4CAF50', '#f44336', '#9e9e9e']
     }

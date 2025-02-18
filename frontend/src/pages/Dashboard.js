@@ -12,13 +12,21 @@ import {
 } from '@mui/material';
 import { YouTube, History, TrendingUp, Settings } from '@mui/icons-material';
 import api from '../services/api';
+import Toast from '../webui/components/modern/Toast'; // Import Toast
 
 const Dashboard = () => {
   const [videoUrl, setVideoUrl] = useState('');
+  const [videoUrlError, setVideoUrlError] = useState(false); // State for video URL error
   const [providers, setProviders] = useState([]);
   const [selectedProvider, setSelectedProvider] = useState('');
   const [selectedModel, setSelectedModel] = useState('');
+  const [toastOpen, setToastOpen] = useState(false); // Toast state
+  const [toastMessage, setToastMessage] = useState(''); // Toast message state
   const navigate = useNavigate();
+
+  const handleToastClose = () => {
+    setToastOpen(false);
+  };
 
   useEffect(() => {
     const fetchProviders = async () => {
@@ -27,6 +35,8 @@ const Dashboard = () => {
         setProviders(response);
       } catch (error) {
         console.error('Error fetching providers:', error);
+        setToastMessage(`Error fetching providers: ${error.message}`); // Set toast message
+        setToastOpen(true); // Open toast
       }
     };
 
@@ -35,7 +45,12 @@ const Dashboard = () => {
 
   const handleAnalyze = (e) => {
     e.preventDefault();
-    if (videoUrl && selectedProvider && selectedModel) {
+    if (!videoUrl) {
+      setVideoUrlError(true);
+      return;
+    }
+    setVideoUrlError(false);
+    if (selectedProvider && selectedModel) {
       navigate(`/analysis/${encodeURIComponent(videoUrl)}?provider=${selectedProvider}&model=${selectedModel}`);
     }
   };
@@ -73,7 +88,12 @@ const Dashboard = () => {
                   variant="outlined"
                   placeholder="Enter YouTube Video URL or ID"
                   value={videoUrl}
-                  onChange={(e) => setVideoUrl(e.target.value)}
+                  error={videoUrlError} // Set error state
+                  helperText={videoUrlError ? "Please enter a YouTube Video URL or ID" : null} // Error message
+                  onChange={(e) => {
+                    setVideoUrl(e.target.value);
+                    setVideoUrlError(false); // Clear error on input change
+                  }}
                   InputProps={{
                     startAdornment: <YouTube sx={{ mr: 1, color: 'text.secondary' }} />,
                   }}
@@ -164,6 +184,12 @@ const Dashboard = () => {
           </Grid>
         ))}
       </Grid>
+      <Toast
+        open={toastOpen}
+        message={toastMessage}
+        severity="error"
+        onClose={handleToastClose}
+      />
     </Box>
   );
 };

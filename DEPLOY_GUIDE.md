@@ -1,175 +1,43 @@
-# Rapid Deployment Strategies for Backend and Frontend Applications
+# Debugging and Error Handling Documentation
 
-This guide outlines optimized strategies and a step-by-step workflow for rapidly deploying a production-ready backend and frontend application (e.g., REST API and SPA with basic CRUD functionality) using common web technologies.
+## Debugging Process
 
-## Optimized Strategies for Rapid Deployment
+The debugging process focused on identifying and resolving local execution errors and deployment reliability issues in the YouTube Sentiment Analyzer application. The primary areas of investigation were:
 
-1. **Choose Common and Well-Supported Technologies:**
-    * **Backend:** Opt for frameworks like Python (Flask, FastAPI) or Node.js (Express.js) due to their extensive ecosystems, ease of use, and mature deployment options.
-    * **Frontend:** Select popular frameworks like React, Vue.js, or Angular, which offer robust tooling, component-based architecture for faster development, and efficient build processes.
-    * **Database:** Utilize cloud-managed database services (e.g., AWS RDS, Google Cloud SQL, Azure Database) for PostgreSQL, MySQL, or MongoDB to eliminate database setup and maintenance overhead.
+- **Backend (API failures, database connectivity):** Although database connectivity issues were mentioned in the task description, this application does not currently use a database. The backend debugging focused on API failures, specifically related to the YouTube API and configuration loading.
+- **Frontend (UI rendering, JavaScript errors):** Frontend debugging focused on ensuring graceful error handling for API call failures and providing user-friendly error messages in the UI.
+- **Text File Processing:** Debugging and error handling were implemented for text file processing, specifically for the application configuration file (`config.json`).
 
-2. **Leverage Cloud Platforms and Managed Services:**
-    * **Platform as a Service (PaaS):** Utilize PaaS offerings like AWS Elastic Beanstalk, Google App Engine, or Azure App Service for simplified deployment and scaling of backend applications. These platforms handle server management, load balancing, and auto-scaling.
-    * **Serverless Functions:** For backend logic, consider serverless functions (e.g., AWS Lambda, Google Cloud Functions, Azure Functions) for event-driven tasks and APIs. Serverless reduces operational complexity and scales automatically.
-    * **Frontend Hosting:** Deploy Single Page Applications (SPAs) to CDNs or static hosting services like Netlify, Vercel, AWS S3, or Firebase Hosting for fast content delivery and easy deployment.
+## Error Resolutions and Implemented Error Handling Mechanisms
 
-3. **Implement Infrastructure as Code (IaC):**
-    * Use IaC tools like Terraform or AWS CloudFormation to define and manage infrastructure (e.g., servers, databases, networks) in a declarative configuration. This enables repeatable, version-controlled, and automated infrastructure provisioning, reducing manual setup time and errors.
+### Backend Error Handling
 
-4. **Automate Deployment with CI/CD Pipelines:**
-    * Set up Continuous Integration and Continuous Deployment (CI/CD) pipelines using tools like GitHub Actions, GitLab CI, Jenkins, or CircleCI. Automate the build, test, and deployment process whenever code changes are pushed to version control. This ensures consistent and rapid deployments with minimal manual intervention.
+- **Configuration Loading:**
+    - **Issue:** The application could fail to load the `config.json` file, leading to API client initialization failures.
+    - **Resolution:** Improved error handling in `backend/app.py` to explicitly check for the existence of `config.json` and handle `JSONDecodeError` during parsing. Custom `ConfigError` exception was introduced to represent configuration-related errors.
+    - **Implementation:**
+        - Modified `backend/app.py` to raise `ConfigError` when `config.json` is not found or cannot be parsed.
+        - Added error handler for `ConfigError` in `backend/app.py` to return a 500 error response with an informative error message.
 
-5. **Containerization with Docker (Optional but Highly Recommended):**
-    * Containerize backend and frontend applications using Docker. Docker containers package applications and their dependencies, ensuring consistency across different environments and simplifying deployment to container orchestration platforms like Kubernetes or cloud container services (e.g., AWS ECS, Google Kubernetes Engine, Azure Kubernetes Service). While Kubernetes might add complexity for very rapid initial deployments, Docker itself streamlines local development and prepares for future scalability.
+- **YouTube API Client Initialization and Requests:**
+    - **Issue:** YouTube API client initialization could fail due to invalid API keys or other issues. API requests could fail due to quota exceeded errors, video not found errors, or other HTTP errors.
+    - **Resolution:** Enhanced error handling in `backend/youtube_api.py` to handle specific `HttpError` codes (403, 404, 401, 500, 503) and other exceptions. Custom exception classes (`YouTubeAPIError`, `VideoNotFoundError`, `QuotaExceededError`, etc.) were introduced to represent YouTube API-related errors. API key rotation and rate limiting were already implemented.
+    - **Implementation:**
+        - Modified `backend/youtube_api.py` to raise custom exceptions (`VideoNotFoundError`, `QuotaExceededError`, etc.) for specific YouTube API errors.
+        - Modified `backend/app.py` to include error handler for `YouTubeAPIError` to return appropriate error responses to the frontend, including status codes when available.
 
-## Step-by-Step Workflow for Rapid Deployment
+### Frontend Error Handling
 
-1. **Project Setup and Technology Selection:**
-    * Define application requirements and choose the technology stack (backend framework, frontend framework, database).
-    * Initialize backend and frontend projects using framework-specific CLIs (e.g., `create-react-app`, `flask`, `express-generator`).
-    * Set up version control (Git) and a repository (e.g., GitHub, GitLab).
+- **API Call Errors:**
+    - **Issue:** Frontend API calls could fail due to network errors, backend server errors, or invalid requests. Errors were not being handled gracefully, potentially leading to blank screens or uninformative error messages.
+    - **Resolution:** Implemented basic error handling in `frontend/src/services/api.js` by wrapping all API calls in `try-catch` blocks to log errors to the console and re-throw errors for component-level handling. Integrated `Toast` component to display user-friendly error notifications in the UI.
+    - **Implementation:**
+        - Modified `frontend/src/services/api.js` to add `try-catch` blocks to all API functions.
+        - Imported and integrated `Toast` component in `frontend/src/pages/Analysis.js` and `frontend/src/pages/Dashboard.js` to display error messages using toast notifications.
 
-2. **Backend Development (REST API with CRUD):**
-    * Design and implement REST API endpoints for basic CRUD operations.
-    * Connect backend to a cloud-managed database service.
-    * Write unit and integration tests for backend API endpoints.
-    * Containerize the backend application using Docker (optional).
+## Further Steps
 
-3. **Frontend Development (SPA with Basic CRUD UI):**
-    * Develop a Single Page Application (SPA) frontend to consume the backend REST API.
-    * Implement UI components for data input, display, and manipulation (CRUD operations).
-    * Write component and end-to-end tests for the frontend application.
-    * Build the frontend application for production.
-    * Containerize the frontend application using Docker (optional).
-
-4. **CI/CD Pipeline Configuration:**
-    * Set up a CI/CD pipeline in your chosen platform (e.g., GitHub Actions).
-    * Configure pipeline stages for:
-        * **Code Checkout:** Fetch code from the repository.
-        * **Build:** Build backend and frontend applications.
-        * **Test:** Run unit, integration, and end-to-end tests.
-        * **Containerization (if using Docker):** Build Docker images for backend and frontend.
-        * **Deployment:** Deploy backend and frontend to the chosen platforms.
-
-5. **Deployment to Production:**
-    * **Backend Deployment:**
-        * Deploy backend REST API to a PaaS (e.g., Elastic Beanstalk, App Engine) or serverless functions.
-        * Configure environment variables (e.g., database connection strings, API keys).
-        * Set up monitoring and logging.
-    * **Frontend Deployment:**
-        * Deploy the production build of the SPA to a CDN or static hosting service (e.g., Netlify, Vercel, S3, Firebase Hosting).
-        * Configure routing and base URL to point to the backend API.
-
-6. **Testing and Validation:**
-    * Perform thorough testing in the production environment:
-        * Integration testing between frontend and backend.
-        * User Acceptance Testing (UAT).
-        * Performance and load testing.
-
-7. **Monitoring and Scaling:**
-    * Implement monitoring tools to track application performance, errors, and resource utilization.
-    * Set up alerts for critical issues.
-    * Plan for scaling backend and frontend infrastructure based on traffic and usage patterns. Cloud platforms offer auto-scaling features that can be configured.
-
-By following these strategies and workflow, you can significantly accelerate the deployment process for production-ready web applications, enabling faster time-to-market and iterative development cycles.
-
-Use the forwarded remote URL to test the complete application.## TestingThe frontend typically opens at <http://localhost:3000>. Use your Codespace’s port forwarding to obtain a public URL.```npm startnpm installcd frontend```To start the frontend:## FrontendThe server listens on <http://0.0.0.0:5000.```python> -m appcd backend```To start the backend server:## Backend# Deployment Guide### Prerequisites
-
-* Ensure backend requirements are installed: `pip install -r backend/requirements.txt`
-* Install frontend dependencies: `cd frontend && npm install`
-* Install localtunnel globally: `npm install -g localtunnel`
-<execute_command>
-<command>npm install -g ngrok</command>
-</execute_command>* Install ngrok globally: `npm install -g ngrok`
-
-### Starting the Application
-
-1. Run the backend server:
-
-   ```
-   python -m backend.app
-   ```
-
-2. Run the frontend server:
-
-   ```
-   cd frontend && npm start
-   ```
-
-3. To obtain a remote URL for the backend (for testing), run:
-
-   ```
-   ./start_servers.sh
-   ```
-
-   This script will start both servers and then expose the backend (port 5000) via localtunnel. The terminal will show you a remote URL.
-
-### Testing the Application
-
-* Visit the remote URL in your browser and use the UI to enter a YouTube video ID for analysis.
-
-### Configuration Instructions
-
-1. **Backend Configuration:**
-    * Ensure that the `config.json` file contains the necessary API keys and configuration settings.
-    * Set the `FLASK_ENV` environment variable to `development` or `production` as needed.
-    * Configure CORS settings in `backend/app.py` to allow requests from the frontend.
-
-2. **Frontend Configuration:**
-    * Update the `frontend/src/config.js` file with the backend API URL.
-    * Ensure that the frontend environment variables are set correctly in the `.env` file.
-
-### API Endpoints
-
-1. **Video Metadata:**
-    * **Endpoint:** `/api/video-metadata/<video_id>`
-    * **Method:** GET
-    * **Description:** Fetches metadata for a given YouTube video.
-
-2. **Comments:**
-    * **Endpoint:** `/api/comments`
-    * **Method:** POST
-    * **Description:** Fetches comments for a given YouTube video.
-
-3. **Sentiment Analysis:**
-    * **Endpoint:** `/api/sentiment-analysis`
-    * **Method:** POST
-    * **Description:** Analyzes the sentiment of comments for a given YouTube video.
-
-4. **Sentiment Trends:**
-    * **Endpoint:** `/api/sentiment/trends`
-    * **Method:** GET
-    * **Description:** Generates sentiment trends for a given YouTube video.
-
-5. **Wordcloud:**
-    * **Endpoint:** `/api/wordcloud`
-    * **Method:** GET
-    * **Description:** Generates a wordcloud for a given YouTube video.
-
-6. **Sentiment Distribution:**
-    * **Endpoint:** `/api/sentiment/distribution`
-    * **Method:** GET
-    * **Description:** Generates sentiment distribution for a given YouTube video.
-
-7. **Engagement:**
-    * **Endpoint:** `/api/engagement`
-    * **Method:** GET
-    * **Description:** Generates engagement visualization for a given YouTube video.
-
-### Troubleshooting Guide
-
-1. **Common Issues:**
-    * **Issue:** `start_servers.sh` script fails to execute.
-    * **Solution:** Ensure that all dependencies are installed and the `ngrok` command is available. Check the logs for any errors.
-
-2. **Issue:** Backend server not starting.
-    * **Solution:** Verify that the `FLASK_ENV` and `PORT` environment variables are set correctly. Check the logs for any errors.
-
-3. **Issue:** Frontend server not starting.
-    * **Solution:** Ensure that all frontend dependencies are installed. Check the logs for any errors.
-
-4. **Issue:** Remote URL not accessible.
-    * **Solution:** Ensure that the `ngrok` tunnel is set up correctly and providing a remote URL. Check the logs for any errors.
-
-By following these strategies and workflow, you can significantly accelerate the deployment process for production-ready web applications, enabling faster time-to-market and iterative development cycles.
+- **Deployment Reliability Issues:** Investigate and address deployment reliability issues, including checking Docker configurations, server configurations, and network configurations.
+- **Text File Processing Error Handling (Beyond Config):** Identify other text files processed by the application and implement robust error handling for them if necessary.
+- **Testing:** Thoroughly test the implemented error handling solutions across local and deployment environments to ensure they are working as expected.
+- **Specific Error Handling in Frontend:** Enhance frontend error handling to handle specific error responses from the backend (e.g., display different messages for 404 vs. 500 errors).
