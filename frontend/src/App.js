@@ -5,6 +5,7 @@ import Navbar from './components/layout/Navbar';
 import Dashboard from './pages/Dashboard';
 import Settings from './pages/Settings';
 import Analysis from './pages/Analysis';
+import SentimentResults from './pages/SentimentResults'; // Import the new component
 import ErrorBoundary from './components/ErrorBoundary';
 import Layout from './components/layout/Layout';
 import './App.css';
@@ -21,6 +22,7 @@ function App() {
               <Route path="/" element={<Dashboard />} />
               <Route path="/analysis/:videoId?" element={<Analysis />} />
               <Route path="/settings" element={<Settings />} />
+              <Route path="/sentiment-results" element={<SentimentResults />} /> {/* Add route for SentimentResults */}
             </Routes>
           </Layout>
         </Router>

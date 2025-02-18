@@ -1,11 +1,11 @@
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from transformers import pipeline
+from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 import numpy as np
 from collections import defaultdict
 import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
-import time
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -15,22 +15,32 @@ thread_local = threading.local()
 def get_analyzers():
     """Get or initialize thread-local sentiment analyzers."""
     if not hasattr(thread_local, "analyzers"):
-        thread_local.analyzers = {
-            "vader": SentimentIntensityAnalyzer(),
-            "transformer": pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
-        }
+        try:
+            thread_local.analyzers = {
+                "vader": SentimentIntensityAnalyzer(),
+                "bert": pipeline("sentiment-analysis", model="bert-base-uncased", device=0 if torch.cuda.is_available() else -1),
+                "roberta": pipeline("sentiment-analysis", model="roberta-base", device=0 if torch.cuda.is_available() else -1),
+                "aspect_based": pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment", device=0 if torch.cuda.is_available() else -1),
+                "emotion": pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base", device=0 if torch.cuda.is_available() else -1)
+            }
+        except Exception as e:
+            logger.error(f"Failed to initialize analyzers: {e}")
+            raise
     return thread_local.analyzers
 
 def analyze_sentiment(text):
     """
     Analyzes the sentiment of a given text using multiple models.
-    Returns combined sentiment analysis results.
+    Returns combined sentiment analysis results including aspect-based sentiment and emotion detection.
     """
     if not text or not isinstance(text, str):
         return {
             "vader": {"compound": 0, "pos": 0, "neu": 0, "neg": 0},
-            "transformer": {"label": "NEUTRAL", "score": 0.5},
-            "combined_score": 0
+            "bert": {"label": "NEUTRAL", "score": 0.5},
+            "roberta": {"label": "NEUTRAL", "score": 0.5},
+            "combined_score": 0,
+            "aspect_based": {},
+            "emotion_detection": {}
         }
 
     analyzers = get_analyzers()
@@ -40,20 +50,33 @@ def analyze_sentiment(text):
     
     # Transformer analysis
     try:
-        transformer_result = analyzers["transformer"](text)[0]
+        bert_result = analyzers["bert"](text, batch_size=8)[0]
+        roberta_result = analyzers["roberta"](text, batch_size=8)[0]
+        aspect_based_result = analyzers["aspect_based"](text, batch_size=8)[0]
+        emotion_result = analyzers["emotion"](text, batch_size=8)[0]
     except Exception as e:
         logger.error(f"Transformer analysis failed: {e}")
-        transformer_result = {"label": "NEUTRAL", "score": 0.5}
+        bert_result = {"label": "NEUTRAL", "score": 0.5}
+        roberta_result = {"label": "NEUTRAL", "score": 0.5}
+        aspect_based_result = {"label": "NEUTRAL", "score": 0.5}
+        emotion_result = {"label": "NEUTRAL", "score": 0.5}
     
-    # Combine scores
-    combined_score = (vader_scores["compound"] + (
-        1 if transformer_result["label"] == "POSITIVE" else -1
-    ) * transformer_result["score"]) / 2
+    # Combine scores using ensemble method
+    combined_score = np.mean([
+        vader_scores["compound"],
+        (1 if bert_result["label"] == "POSITIVE" else -1) * bert_result["score"],
+        (1 if roberta_result["label"] == "POSITIVE" else -1) * roberta_result["score"],
+        (1 if aspect_based_result["label"] == "POSITIVE" else -1) * aspect_based_result["score"],
+        (1 if emotion_result["label"] == "POSITIVE" else -1) * emotion_result["score"]
+    ])
 
     return {
         "vader": vader_scores,
-        "transformer": transformer_result,
-        "combined_score": combined_score
+        "bert": bert_result,
+        "roberta": roberta_result,
+        "combined_score": combined_score,
+        "aspect_based": aspect_based_result,
+        "emotion_detection": emotion_result
     }
 
 def analyze_comments_batch(comments, batch_size=32):
