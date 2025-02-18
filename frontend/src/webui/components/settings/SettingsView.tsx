@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Card, CardContent, Typography, Switch, FormControlLabel, TextField, Button, MenuItem, Select, InputLabel, FormControl } from '@mui/material';
+import { Card, CardContent, Typography, Switch, FormControlLabel, TextField, Button, MenuItem, Select, InputLabel, FormControl, Link } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 import axios from 'axios';
 
@@ -19,6 +19,8 @@ const SettingsView: React.FC = () => {
 	const [baseUrl, setBaseUrl] = useState('');
 	const [model, setModel] = useState('');
 	const [provider, setProvider] = useState('');
+	const [featureXEnabled, setFeatureXEnabled] = useState(false);
+	const [toolYEnabled, setToolYEnabled] = useState(false);
 	const [error, setError] = useState('');
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -31,6 +33,8 @@ const SettingsView: React.FC = () => {
 				baseUrl,
 				model,
 				provider,
+				featureXEnabled,
+				toolYEnabled,
 			});
 			console.log('Settings updated:', response.data);
 		} catch (err) {
@@ -86,11 +90,11 @@ const SettingsView: React.FC = () => {
 							onChange={(e) => setModel(e.target.value)}
 						/>
 						<FormControlLabel
-							control={<Switch color="primary" />}
+							control={<Switch color="primary" checked={featureXEnabled} onChange={(e) => setFeatureXEnabled(e.target.checked)} />}
 							label="Enable Feature X"
 						/>
 						<FormControlLabel
-							control={<Switch color="primary" />}
+							control={<Switch color="primary" checked={toolYEnabled} onChange={(e) => setToolYEnabled(e.target.checked)} />}
 							label="Enable Tool Y"
 						/>
 						<Button type="submit" variant="contained" color="primary">
@@ -102,6 +106,9 @@ const SettingsView: React.FC = () => {
 							{error}
 						</Typography>
 					)}
+					<Typography variant="body2" style={{ marginTop: '20px' }}>
+						Need help? <Link href="https://example.com/get-api-key" target="_blank">Get your API key here</Link>
+					</Typography>
 				</CardContent>
 			</Card>
 		</div>
