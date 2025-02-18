@@ -78,7 +78,7 @@ const fetchComments = async (
   maxResults: number = 100,
   progressCallback?: (progress: number) => void
 ): Promise<Comment[]> => {
-  let allComments: Comment[] = [];
+  const allComments: Comment[] = [];
   let nextPageToken: string | undefined;
   let totalResults = 0;
   const maxPages = Math.ceil(maxResults / 100);
