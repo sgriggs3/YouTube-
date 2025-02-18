@@ -8,7 +8,7 @@ setup(
         "flask==2.2.5",
         "pandas==1.3.3",
         "plotly==5.3.1",
-        "nltk==3.9",
+        "nltk==3.9.1",
         "vaderSentiment==3.3.2",
         "transformers==4.48.0",
         "torch==2.2.0",
