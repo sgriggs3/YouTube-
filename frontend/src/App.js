@@ -9,6 +9,10 @@ import { useExtensionState, ExtensionStateContextProvider } from './webui/contex
 import { vscode } from './webui/utils/vscode';
 import McpView from './webui/components/mcp/McpView';
 import AnalysisView from './webui/components/analysis/AnalysisView';
+import VideoInputPage from './pages/VideoInputPage';
+import MetadataPage from './pages/MetadataPage';
+import SentimentAnalysisPage from './pages/SentimentAnalysisPage';
+import DataVisualizationPage from './pages/DataVisualizationPage';
 
 // Configure the backend URL
 const BACKEND_URL = process.env.REACT_APP_BACKEND_URL || "http://localhost:5000";
@@ -95,6 +99,18 @@ const App = () => {
             <Button color="inherit" component={Link} to="/analysis">
               Analysis
             </Button>
+            <Button color="inherit" component={Link} to="/video-input">
+              Video Input
+            </Button>
+            <Button color="inherit" component={Link} to="/metadata">
+              Metadata
+            </Button>
+            <Button color="inherit" component={Link} to="/sentiment-analysis">
+              Sentiment Analysis
+            </Button>
+            <Button color="inherit" component={Link} to="/data-visualization">
+              Data Visualization
+            </Button>
           </Toolbar>
         </AppBar>
         <Container style={{ marginTop: '20px' }}>
@@ -104,6 +120,10 @@ const App = () => {
             <Route path="/history" element={<HistoryView />} />
             <Route path="/mcp" element={<McpView />} />
             <Route path="/analysis" element={<AnalysisView metadata={metadata} sentiment={sentiment} />} />
+            <Route path="/video-input" element={<VideoInputPage />} />
+            <Route path="/metadata" element={<MetadataPage />} />
+            <Route path="/sentiment-analysis" element={<SentimentAnalysisPage />} />
+            <Route path="/data-visualization" element={<DataVisualizationPage />} />
           </Routes>
           <Paper elevation={3} style={{ padding: '20px', marginTop: '20px' }}>
             <Typography variant="h4" gutterBottom>
