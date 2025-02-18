@@ -1,28 +1,61 @@
-import styled, { keyframes } from "styled-components"
+1import React, { useState, useEffect } from 'react';
+import Snackbar from '@mui/material/Snackbar';
+import Alert from '@mui/material/Alert';
+import Slide from '@mui/material/Slide';
+import { styled } from '@mui/material/styles';
 
-const slideIn = keyframes`
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
-`
+interface ToastProps {
+  open: boolean;
+  message: string;
+  severity: 'success' | 'info' | 'warning' | 'error';
+  onClose: () => void;
+}
 
-export const Toast = styled.div<{ type?: "success" | "error" | "info" }>`
-	position: fixed;
-	bottom: 20px;
-	right: 20px;
-	padding: 12px 24px;
-	border-radius: 8px;
-	background: ${(props) => {
-		switch (props.type) {
-			case "success":
-				return "var(--success-color)"
-			case "error":
-				return "var(--error-color)"
-			default:
-				return "var(--secondary-bg)"
-		}
-	}};
-	color: var(--text-primary);
-	animation: ${slideIn} 0.3s ease-out;
-	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-	z-index: 1000;
-`
+const StyledSnackbar = styled(Snackbar)`
+  & .MuiSnackbarContent-root {
+    background-color: ${(props) =>
+      props.severity === 'success'
+        ? '#4caf50'
+        : props.severity === 'error'
+        ? '#f44336'
+        : props.severity === 'warning'
+        ? '#ff9800'
+        : '#2196f3'};
+    color: white;
+  }
+`;
+
+function SlideTransition(props: any) {
+  return <Slide {...props} direction="up" />;
+}
+
+const Toast: React.FC<ToastProps> = ({ open, message, severity, onClose }) => {
+  const [transition, setTransition] = useState<any>(undefined);
+
+  useEffect(() => {
+    setTransition(() => SlideTransition);
+  }, []);
+
+  return (
+    <Snackbar
+      open={open}
+      autoHideDuration={6000}
+      onClose={onClose}
+      TransitionComponent={transition}
+      anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+    >
+      <Alert onClose={onClose} severity={severity} sx={{ width: '100%', backgroundColor:
+        severity === 'success'
+        ? '#4caf50'
+        : severity === 'error'
+        ? '#f44336'
+        : severity === 'warning'
+        ? '#ff9800'
+        : '#2196f3' }}>
+        {message}
+      </Alert>
+    </Snackbar>
+  );
+};
+
+export default Toast;

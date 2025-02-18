@@ -56,6 +56,15 @@ export const lightTheme = createTheme({
       },
     },
   },
+  custom: {
+    primaryBg: '#f8f9fa',
+    secondaryBg: '#ffffff',
+    accentColor: '#2196f3',
+    textPrimary: '#2c3e50',
+    textSecondary: '#7f8c8d',
+    errorColor: '#cf6679',
+    successColor: '#03dac6',
+  },
 });
 
 export const darkTheme = createTheme({
@@ -100,7 +109,7 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           borderRadius: 12,
-          boxShadow: '0 4px 6px rgba(0,0,0,0.3)',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
         },
       },
     },
@@ -113,6 +122,15 @@ export const darkTheme = createTheme({
         },
       },
     },
+  },
+  custom: {
+    primaryBg: '#121212',
+    secondaryBg: '#1e1e1e',
+    accentColor: '#bb86fc',
+    textPrimary: '#ffffff',
+    textSecondary: 'rgba(255,255,255,0.7)',
+    errorColor: '#cf6679',
+    successColor: '#03dac6',
   },
 });
 

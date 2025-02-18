@@ -1,17 +1,21 @@
-import styled from "styled-components"
+import styled from "@emotion/styled";
+import { useTheme, Theme } from "@mui/material/styles";
 
 export const Card = styled.div<{ interactive?: boolean }>`
-	background: var(--secondary-bg);
-	border-radius: 12px;
-	padding: 16px;
-	margin: 8px 0;
-	transition:
-		transform 0.2s ease,
-		box-shadow 0.2s ease;
+  background: ${(props) => {
+    const theme: Theme = useTheme();
+    return theme.custom.secondaryBg;
+  }};
+  border-radius: 12px;
+  padding: 16px;
+  margin: 8px 0;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 
-	${(props) =>
-		props.interactive &&
-		`
+  ${(props) =>
+    props.interactive &&
+    `
     cursor: pointer;
     &:hover {
       transform: translateY(-2px);
@@ -19,7 +23,7 @@ export const Card = styled.div<{ interactive?: boolean }>`
     }
   `}
 
-	@media (max-width: 768px) {
-		padding: 12px;
-	}
-`
+  @media (max-width: 768px) {
+    padding: 12px;
+  }
+`;

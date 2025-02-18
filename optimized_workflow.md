@@ -1,4 +1,4 @@
-A# Optimized Workflow for YouTube Insight Analyzer
+# Optimized Workflow for YouTube Insight Analyzer
 
 ## Project Setup
 
