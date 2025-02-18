@@ -19,6 +19,8 @@
     "postCreateCommand": "yarn install",
     "remoteUser": "node",
     "tasks": {
-      "build": "npm run install:all"
+      "build": "npm run install:all",
+      "test": "cd backend && pytest && cd ../frontend && npm test",
+      "launch": "npm run start:dev"
     }
 }

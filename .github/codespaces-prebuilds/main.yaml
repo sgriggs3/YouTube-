@@ -30,6 +30,21 @@ jobs:
           pip install -r requirements.txt
           python -m nltk.downloader punkt vader_lexicon
           pip install google-api-python-client  # Ensure the YouTube API library is installed
+          npm install  # Install Node.js dependencies
+
+      - name: Build Frontend
+        run: |
+          cd frontend
+          npm run build  # Build the frontend
+
+      - name: Run Backend Tests
+        run: |
+          pytest  # Run backend tests
+
+      - name: Run Frontend Tests
+        run: |
+          cd frontend
+          npm test  # Run frontend tests
 
       - name: Start Dev Container (Optional)
         run: |
