@@ -1,11 +1,10 @@
-from vaderSentiment.vaderSentiment import SentimentIntensityAnalyzer
 from transformers import pipeline
 import numpy as np
 from collections import defaultdict
 import logging
 import threading
 from concurrent.futures import ThreadPoolExecutor
-import time
+import torch
 
 logger = logging.getLogger(__name__)
 
@@ -15,44 +14,61 @@ thread_local = threading.local()
 def get_analyzers():
     """Get or initialize thread-local sentiment analyzers."""
     if not hasattr(thread_local, "analyzers"):
-        thread_local.analyzers = {
-            "vader": SentimentIntensityAnalyzer(),
-            "transformer": pipeline("sentiment-analysis", model="distilbert-base-uncased-finetuned-sst-2-english")
-        }
+        try:
+            device = 0 if torch.cuda.is_available() else -1
+            thread_local.analyzers = {
+                "transformer": pipeline("sentiment-analysis", model="bert-base-uncased", device=device),
+                "aspect": pipeline("zero-shot-classification", model="roberta-base", device=device),
+                "emotion": pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion", device=device)
+            }
+        except Exception as e:
+            logger.error(f"Failed to initialize analyzers: {e}")
+            raise
     return thread_local.analyzers
 
 def analyze_sentiment(text):
     """
-    Analyzes the sentiment of a given text using multiple models.
-    Returns combined sentiment analysis results.
+    Analyzes the sentiment, aspects, and emotions of a given text using multiple models.
+    Returns combined analysis results.
     """
     if not text or not isinstance(text, str):
         return {
-            "vader": {"compound": 0, "pos": 0, "neu": 0, "neg": 0},
             "transformer": {"label": "NEUTRAL", "score": 0.5},
+            "aspect": {"labels": [], "scores": []},
+            "emotion": {"label": "neutral", "score": 0.5},
             "combined_score": 0
         }
 
     analyzers = get_analyzers()
     
-    # VADER analysis
-    vader_scores = analyzers["vader"].polarity_scores(text)
-    
-    # Transformer analysis
+    # Transformer sentiment analysis
     try:
         transformer_result = analyzers["transformer"](text)[0]
     except Exception as e:
-        logger.error(f"Transformer analysis failed: {e}")
+        logger.error(f"Transformer sentiment analysis failed: {e}")
         transformer_result = {"label": "NEUTRAL", "score": 0.5}
     
+    # Aspect-based sentiment analysis
+    try:
+        aspect_result = analyzers["aspect"](text, candidate_labels=["service", "price", "quality", "location"])
+    except Exception as e:
+        logger.error(f"Aspect-based analysis failed: {e}")
+        aspect_result = {"labels": [], "scores": []}
+    
+    # Emotion detection
+    try:
+        emotion_result = analyzers["emotion"](text)[0]
+    except Exception as e:
+        logger.error(f"Emotion detection failed: {e}")
+        emotion_result = {"label": "neutral", "score": 0.5}
+    
     # Combine scores
-    combined_score = (vader_scores["compound"] + (
-        1 if transformer_result["label"] == "POSITIVE" else -1
-    ) * transformer_result["score"]) / 2
+    combined_score = (transformer_result["score"] + emotion_result["score"]) / 2
 
     return {
-        "vader": vader_scores,
         "transformer": transformer_result,
+        "aspect": aspect_result,
+        "emotion": emotion_result,
         "combined_score": combined_score
     }
 
