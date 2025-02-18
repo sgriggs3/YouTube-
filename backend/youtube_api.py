@@ -5,6 +5,14 @@ import logging
 import time
 import os
 from typing import Optional, List, Dict, Any
+from .exceptions import (
+    YouTubeAPIError,
+    VideoNotFoundError,
+    QuotaExceededError,
+    InternalServerError,
+    ServiceUnavailableError,
+    BadRequestError
+)
 
 logger = logging.getLogger(__name__)
 
@@ -76,15 +84,24 @@ class YouTubeAPI:
                 if e.resp.status == 403:  # Quota exceeded
                     logger.warning("Quota exceeded, attempting to rotate API key")
                     if self.handle_quota_exceeded():
-                        retries -= 1
-                        continue
-                    break
+                        raise QuotaExceededError()
+                    else:
+                        break # No more keys, break retry loop and return None
+                elif e.resp.status == 404:
+                    logger.warning(f"Video not found: {video_id}")
+                    raise VideoNotFoundError(video_id)
+                elif e.resp.status == 401:  # Unauthorized
+                    logger.error(f"Unauthorized API request (401): {e}")
+                    raise YouTubeAPIError(f"Unauthorized API request", 401)
+                elif e.resp.status in [500, 503]: # Server Error, Service Unavailable
+                    logger.error(f"YouTube API server error ({e.resp.status}): {e}")
+                    raise InternalServerError(f"YouTube API server error: {e}")
                 else:
                     logger.error(f"HTTP error occurred: {e}")
-                    break
+                    raise YouTubeAPIError(f"HTTP error: {e}", e.resp.status)
             except Exception as e:
-                logger.error(f"Unexpected error: {e}")
-                break
+                logger.error(f"Unexpected error of type {type(e)}: {e}")
+                raise YouTubeAPIError(f"Unexpected error: {e}")
             
         return None
 
@@ -128,18 +145,24 @@ class YouTubeAPI:
                 if e.resp.status == 403:  # Quota exceeded
                     logger.warning("Quota exceeded, attempting to rotate API key")
                     if self.handle_quota_exceeded():
-                        retries -= 1
-                        continue
-                    break
+                        raise QuotaExceededError()
+                    else:
+                        break # No more keys, break retry loop and return None
                 elif e.resp.status == 404:
                     logger.warning(f"Video not found: {video_id}")
-                    break
+                    raise VideoNotFoundError(video_id)
+                elif e.resp.status == 401:  # Unauthorized
+                    logger.error(f"Unauthorized API request (401): {e}")
+                    raise YouTubeAPIError(f"Unauthorized API request", 401)
+                elif e.resp.status in [500, 503]: # Server Error, Service Unavailable
+                    logger.error(f"YouTube API server error ({e.resp.status}): {e}")
+                    raise InternalServerError(f"YouTube API server error: {e}")
                 else:
                     logger.error(f"HTTP error occurred: {e}")
-                    break
+                    raise YouTubeAPIError(f"HTTP error: {e}", e.resp.status)
             except Exception as e:
                 logger.error(f"Unexpected error: {e}")
-                break
+                raise YouTubeAPIError(f"Unexpected error: {e}")
 
         return comments if comments else None
 
@@ -153,5 +176,64 @@ def create_youtube_client(api_keys: Optional[List[str]] = None) -> Optional[YouT
             logger.error("No YouTube API key found in environment variables")
             return None
         api_keys = [api_key]
-    
+
     return YouTubeAPI(api_keys)
+
+    def search_videos(self, query: str, max_results: int = 10) -> Optional[List[Dict[str, Any]]]:
+        """
+        Search videos on YouTube based on a query.
+        """
+        if not self.youtube:
+            raise RuntimeError("YouTube API client not initialized")
+
+        videos = []
+        retries = len(self.api_keys)
+
+        while retries > 0:
+            try:
+                self.apply_rate_limiting()
+                request = self.youtube.search().list(
+                    part="snippet",
+                    maxResults=max_results,
+                    q=query,
+                    type="video"
+                )
+                response = request.execute()
+                
+                for item in response.get('items', []):
+                    video = {
+                        'id': item['id']['videoId'],
+                        'title': item['snippet']['title'],
+                        'description': item['snippet']['description'],
+                        'thumbnail': item['snippet']['thumbnails']['default']['url'],
+                        'channelTitle': item['snippet']['channelTitle'],
+                        'publishTime': item['snippet']['publishTime']
+                    }
+                    videos.append(video)
+
+                return videos
+
+            except HttpError as e:
+                if e.resp.status == 403:  # Quota exceeded
+                    logger.warning("Quota exceeded, attempting to rotate API key")
+                    if self.handle_quota_exceeded():
+                        raise QuotaExceededError()
+                    else:
+                        break # No more keys, break retry loop and return None
+                elif e.resp.status == 404:
+                    logger.warning(f"Video not found: {video_id}")
+                    raise VideoNotFoundError(video_id)
+                elif e.resp.status == 401:  # Unauthorized
+                    logger.error(f"Unauthorized API request (401): {e}")
+                    raise YouTubeAPIError(f"Unauthorized API request", 401)
+                elif e.resp.status in [500, 503]: # Server Error, Service Unavailable
+                    logger.error(f"YouTube API server error ({e.resp.status}): {e}")
+                    raise InternalServerError(f"YouTube API server error: {e}")
+                else:
+                    logger.error(f"HTTP error occurred: {e}")
+                    raise YouTubeAPIError(f"HTTP error: {e}", e.resp.status)
+            except Exception as e:
+                logger.error(f"Unexpected error: {e}")
+                raise YouTubeAPIError(f"Unexpected error: {e}")
+
+        return None

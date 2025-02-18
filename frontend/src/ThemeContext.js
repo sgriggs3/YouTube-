@@ -1,5 +1,6 @@
-import React, { createContext, useMemo, useState } from 'react';
-import { createTheme, ThemeProvider } from '@mui/material/styles';
+import React, { createContext, useState, useMemo, useEffect } from 'react';
+import { ThemeProvider } from '@mui/material/styles';
+import { lightTheme, darkTheme } from './theme';
 
 export const CustomThemeContext = createContext({
   currentTheme: 'light',
@@ -7,12 +8,15 @@ export const CustomThemeContext = createContext({
 });
 
 const CustomThemeProvider = ({ children }) => {
-  const [themeName, setThemeName] = useState('light');
-  const theme = useMemo(() => createTheme({
-    palette: {
-      mode: themeName
-    }
-  }), [themeName]);
+  const storedTheme = localStorage.getItem('theme') || 'light'; // Get theme from local storage or default to light
+  const [themeName, setThemeName] = useState(storedTheme);
+  const theme = useMemo(() => {
+    return themeName === 'light' ? lightTheme : darkTheme;
+  }, [themeName]);
+
+  useEffect(() => {
+    localStorage.setItem('theme', themeName); // Update local storage on theme change
+  }, [themeName]);
 
   return (
     <CustomThemeContext.Provider value={{ currentTheme: themeName, setTheme: setThemeName }}>

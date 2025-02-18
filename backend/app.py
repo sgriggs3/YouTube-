@@ -12,6 +12,15 @@ from .data_visualization import (
     create_sentiment_distribution,
     create_engagement_visualization,
 )
+from .exceptions import (
+    ConfigError,
+    YouTubeAPIError,
+    VideoNotFoundError,
+    QuotaExceededError,
+    InternalServerError,
+    ServiceUnavailableError,
+    BadRequestError
+)
 
 app = Flask(__name__)
 CORS(app)
@@ -30,20 +39,23 @@ def setup_logging():
 logger = setup_logging()
 
 # Load configuration and initialize APIs
+config_path = os.path.join(os.path.dirname(__file__), '../config.json')
+if not os.path.exists(config_path):
+    logger.error(f"Config file not found at: {config_path}")
+    raise ConfigError(f"Config file not found at: {config_path}")
+
 try:
-    config_path = os.path.join(os.path.dirname(__file__), '../config.json')
-    if os.path.exists(config_path):
-        with open(config_path, 'r') as f:
-            config = json.load(f)
-            api_keys = config.get('youtube_api_keys', [])
-            if isinstance(config.get('youtube_api_key'), str):
-                api_keys.append(config['youtube_api_key'])
-    else:
-        api_keys = []
-        logger.warning("Config file not found")
+    with open(config_path, 'r') as f:
+        config = json.load(f)
+        api_keys = config.get('youtube_api_keys', [])
+        if isinstance(config.get('youtube_api_key'), str):
+            api_keys.append(config['youtube_api_key'])
+except json.JSONDecodeError as e:
+    logger.error(f"Failed to parse config file: {e}")
+    raise ConfigError(f"Failed to parse config file: {e}")
 except Exception as e:
     logger.error(f"Failed to load config: {e}")
-    api_keys = []
+    raise ConfigError(f"Failed to load config: {e}")
 
 # Initialize YouTube API client
 youtube_client = create_youtube_client(api_keys)
@@ -57,7 +69,7 @@ def get_video_data(video_id):
 
     metadata = youtube_client.get_video_metadata(video_id)
     if not metadata:
-        raise ValueError(f"No metadata found for video ID: {video_id}")
+        raise VideoNotFoundError(video_id)
 
     comments = youtube_client.get_video_comments(video_id)
     if not comments:
@@ -95,15 +107,26 @@ def bad_request(error):
     logger.warning(f"Bad request: {error}")
     return jsonify({'error': str(error)}), 400
 
-# API endpoints
+@app.errorhandler(ConfigError)
+def handle_config_error(error):
+    logger.error(f"Configuration error: {error}")
+    return jsonify({'error': str(error)}), 500
+
+@app.errorhandler(YouTubeAPIError)
+def handle_youtube_api_error(error):
+    logger.error(f"YouTube API error: {error}")
+    if error.status_code:
+        return jsonify({'error': error.args[0]}), error.status_code
+    return jsonify({'error': 'YouTube API error occurred'}), 500
+
 @app.route('/api/analyze/<video_id>')
 def analyze_video(video_id):
     """Main endpoint to analyze a video completely."""
     try:
         result = get_video_data(video_id)
         return jsonify(result)
-    except ValueError as e:
-        return jsonify({'error': str(e)}), 400
+    except VideoNotFoundError as e:
+        return handle_youtube_api_error(e)
     except RuntimeError as e:
         return jsonify({'error': str(e)}), 503
     except Exception as e:
@@ -131,6 +154,8 @@ def get_visualizations(video_id):
             'sentiment_distribution_url': f'/static/{sentiment_dist_path}',
             'engagement_url': f'/static/{engagement_path}'
         })
+    except VideoNotFoundError as e:
+        return handle_youtube_api_error(e)
     except Exception as e:
         logger.error(f"Error generating visualizations: {e}")
         return jsonify({'error': 'Failed to generate visualizations'}), 500
@@ -158,8 +183,26 @@ def save_settings():
             json.dump(settings, f, indent=4)
         return jsonify({'message': 'Settings saved successfully'})
     except Exception as e:
-        logger.error(f"Error saving settings: {e}")
         return jsonify({'error': 'Failed to save settings'}), 500
+
+@app.route('/api/search', methods=['GET'])
+def search_videos():
+    """Endpoint to search videos based on a query."""
+    query = request.args.get('q')
+    if not query:
+        return jsonify({'error': 'Search query is required'}), 400
+
+    try:
+        if not youtube_client:
+            raise RuntimeError("YouTube API client not initialized")
+        
+        search_results = youtube_client.search_videos(query, max_results=10) # Call search_videos method in youtube_api.py
+        return jsonify({'results': search_results})
+    except RuntimeError as e:
+        return jsonify({'error': str(e)}), 503
+    except Exception as e:
+        logger.error(f"Error during video search: {e}")
+        return jsonify({'error': 'Failed to perform video search'}), 500
 
 if __name__ == '__main__':
     is_production = os.environ.get('FLASK_ENV') == 'production'
