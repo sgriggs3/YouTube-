@@ -113,9 +113,19 @@
       <div class="progress-container" id="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
       </div>
+      <div class="chart-type-selector">
+        <label for="chart-type">Select Chart Type:</label>
+        <select id="chart-type">
+          <option value="line">Line Chart</option>
+          <option value="bar">Bar Chart</option>
+          <option value="pie">Pie Chart</option>
+        </select>
+      </div>
     </main>
 
     <script type="module">
+      import Plot from 'react-plotly.js';
+
       // Add WebSocket connection for real-time updates
       const ws = new WebSocket("ws://localhost:8765");
 
@@ -171,6 +181,58 @@
         progressBar.style.width = `${progress}%`;
         progressBar.textContent = `${progress}% - ${message}`;
         progressContainer.style.display = "block";
+      }
+
+      function updateCharts(data) {
+        const chartType = document.getElementById("chart-type").value;
+        const sentimentTrend = document.querySelector(".sentiment-trend");
+        const topicDistribution = document.querySelector(".topic-distribution");
+        const engagementMetrics = document.querySelector(".engagement-metrics");
+
+        const renderChart = (element, chartData) => {
+          switch (chartType) {
+            case "bar":
+              Plot.newPlot(element, [
+                {
+                  x: chartData.map((item, index) => `Item ${index + 1}`),
+                  y: chartData.map(item => item.value),
+                  type: 'bar',
+                  marker: { color: '#8884d8' },
+                },
+              ], { title: 'Bar Chart' });
+              break;
+            case "pie":
+              const counts = chartData.reduce((acc, item) => {
+                acc[item.label] = (acc[item.label] || 0) + 1;
+                return acc;
+              }, {});
+              Plot.newPlot(element, [
+                {
+                  values: Object.values(counts),
+                  labels: Object.keys(counts),
+                  type: 'pie',
+                  marker: { colors: ["#8884d8", "#82ca9d", "#ffc658"] },
+                },
+              ], { title: 'Pie Chart' });
+              break;
+            case "line":
+            default:
+              Plot.newPlot(element, [
+                {
+                  x: chartData.map((item, index) => `Item ${index + 1}`),
+                  y: chartData.map(item => item.value),
+                  type: 'scatter',
+                  mode: 'lines+markers',
+                  marker: { color: '#8884d8' },
+                },
+              ], { title: 'Line Chart' });
+              break;
+          }
+        };
+
+        renderChart(sentimentTrend, data.sentimentTrend);
+        renderChart(topicDistribution, data.topicDistribution);
+        renderChart(engagementMetrics, data.engagementMetrics);
       }
     </script>
   </body>
