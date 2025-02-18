@@ -67,3 +67,18 @@ trap cleanup EXIT
 # Wait for user input
 echo "Servers are running. Press Ctrl+C to stop..."
 wait
+
+#!/bin/bash
+
+# Start the backend server
+cd backend
+python -m flask run --host=0.0.0.0 &
+BACKEND_PID=$!
+
+# Start the frontend server
+cd ../frontend
+npm start &
+FRONTEND_PID=$!
+
+# Wait for both processes
+wait $BACKEND_PID $FRONTEND_PID
