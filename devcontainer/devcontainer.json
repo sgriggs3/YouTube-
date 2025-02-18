@@ -1,17 +1,17 @@
 {
   "name": "YouTube Insight Analyzer",
-  "image": "mcr.microsoft.com/vscode/devcontainers/python:3.9",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "."
+  },
   "settings": {
     "terminal.integrated.shell.linux": "/bin/bash",
-    "python.pythonPath": "/usr/local/bin/python"
+    "python.pythonPath": "/usr/local/bin/python3"
   },
   "extensions": [
-    "ms-python.python",
-    "ms-toolsai.jupyter",
-    "streetsidesoftware.code-spell-checker",
-    "esbenp.prettier-vscode"
+    "ms-python.python"
   ],
-  "postCreateCommand": "pip install -r requirements.txt && python -m nltk.downloader punkt vader_lexicon",
+  "postCreateCommand": "pip install --no-cache-dir -r requirements.txt && python -m nltk.downloader punkt vader_lexicon",
   "postStartCommand": "flask run --host=0.0.0.0 --port=5000",
   "forwardPorts": [5000],
   "containerEnv": {
@@ -22,7 +22,12 @@
       "prebuilds": {
         "enabled": true,
         "branches": ["main"],
-        "repository": true
+        "repository": true,
+        "cache": {
+          "paths": [
+            "/usr/local/lib/python3.9/site-packages"
+          ]
+        }
       }
     }
   }
