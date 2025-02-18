@@ -12,9 +12,16 @@ from .data_visualization import (
     create_sentiment_distribution,
     create_engagement_visualization,
 )
+from flask_socketio import SocketIO, emit
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+from werkzeug.security import generate_password_hash, check_password_hash
+import pandas as pd
 
 app = Flask(__name__)
 CORS(app)
+socketio = SocketIO(app, cors_allowed_origins="*")
+app.config['JWT_SECRET_KEY'] = 'your_jwt_secret_key'
+jwt = JWTManager(app)
 
 def setup_logging():
     logging.basicConfig(
@@ -161,6 +168,192 @@ def save_settings():
         logger.error(f"Error saving settings: {e}")
         return jsonify({'error': 'Failed to save settings'}), 500
 
+@app.route('/api/search_comments', methods=['GET'])
+def search_comments():
+    """Endpoint to search within comments."""
+    try:
+        video_id = request.args.get('video_id')
+        keyword = request.args.get('keyword')
+        if not video_id or not keyword:
+            return jsonify({'error': 'Missing video_id or keyword'}), 400
+
+        comments = youtube_client.get_video_comments(video_id)
+        filtered_comments = [comment for comment in comments if keyword.lower() in comment['text'].lower()]
+
+        return jsonify(filtered_comments)
+    except Exception as e:
+        logger.error(f"Error searching comments: {e}")
+        return jsonify({'error': 'Failed to search comments'}), 500
+
+@app.route('/api/export_data', methods=['POST'])
+def export_data():
+    """Endpoint to export data in various formats."""
+    try:
+        data = request.json
+        export_format = data.get('format', 'json')
+        video_id = data.get('video_id')
+        if not video_id:
+            return jsonify({'error': 'Missing video_id'}), 400
+
+        result = get_video_data(video_id)
+
+        if export_format == 'csv':
+            df = pd.DataFrame(result['comments'])
+            csv_path = f'temp/comments_{video_id}.csv'
+            df.to_csv(csv_path, index=False)
+            return send_file(csv_path, as_attachment=True)
+        elif export_format == 'json':
+            json_path = f'temp/comments_{video_id}.json'
+            with open(json_path, 'w') as f:
+                json.dump(result, f, indent=4)
+            return send_file(json_path, as_attachment=True)
+        elif export_format == 'excel':
+            df = pd.DataFrame(result['comments'])
+            excel_path = f'temp/comments_{video_id}.xlsx'
+            df.to_excel(excel_path, index=False)
+            return send_file(excel_path, as_attachment=True)
+        else:
+            return jsonify({'error': 'Unsupported export format'}), 400
+    except Exception as e:
+        logger.error(f"Error exporting data: {e}")
+        return jsonify({'error': 'Failed to export data'}), 500
+
+@app.route('/api/import_data', methods=['POST'])
+def import_data():
+    """Endpoint to import data from external sources."""
+    try:
+        file = request.files['file']
+        if not file:
+            return jsonify({'error': 'No file provided'}), 400
+
+        df = pd.read_csv(file)
+        comments = df.to_dict(orient='records')
+        return jsonify({'message': 'Data imported successfully', 'comments': comments})
+    except Exception as e:
+        logger.error(f"Error importing data: {e}")
+        return jsonify({'error': 'Failed to import data'}), 500
+
+@app.route('/api/share_analysis', methods=['POST'])
+def share_analysis():
+    """Endpoint to share analysis results on social media."""
+    try:
+        data = request.json
+        platform = data.get('platform')
+        analysis_url = data.get('analysis_url')
+        if not platform or not analysis_url:
+            return jsonify({'error': 'Missing platform or analysis_url'}), 400
+
+        # Placeholder for actual sharing logic
+        return jsonify({'message': f'Analysis shared on {platform}'})
+    except Exception as e:
+        logger.error(f"Error sharing analysis: {e}")
+        return jsonify({'error': 'Failed to share analysis'}), 500
+
+@app.route('/api/custom_dashboard', methods=['POST'])
+def custom_dashboard():
+    """Endpoint to create custom dashboards."""
+    try:
+        data = request.json
+        dashboard_config = data.get('dashboard_config')
+        if not dashboard_config:
+            return jsonify({'error': 'Missing dashboard_config'}), 400
+
+        # Placeholder for actual dashboard creation logic
+        return jsonify({'message': 'Custom dashboard created successfully'})
+    except Exception as e:
+        logger.error(f"Error creating custom dashboard: {e}")
+        return jsonify({'error': 'Failed to create custom dashboard'}), 500
+
+@app.route('/api/reporting', methods=['GET'])
+def reporting():
+    """Endpoint to generate automated reports on video performance."""
+    try:
+        video_id = request.args.get('video_id')
+        if not video_id:
+            return jsonify({'error': 'Missing video_id'}), 400
+
+        result = get_video_data(video_id)
+        report = {
+            'total_comments': len(result['comments']),
+            'average_sentiment': result['sentiment_analysis']['overall_stats']['average_sentiment'],
+            'engagement_metrics': result['metadata']['statistics']
+        }
+        return jsonify(report)
+    except Exception as e:
+        logger.error(f"Error generating report: {e}")
+        return jsonify({'error': 'Failed to generate report'}), 500
+
+@app.route('/api/mcp_integration', methods=['POST'])
+def mcp_integration():
+    """Endpoint to integrate with MCP server for additional tools and resources."""
+    try:
+        data = request.json
+        mcp_server_url = data.get('mcp_server_url')
+        if not mcp_server_url:
+            return jsonify({'error': 'Missing mcp_server_url'}), 400
+
+        # Placeholder for actual MCP integration logic
+        return jsonify({'message': 'Integrated with MCP server successfully'})
+    except Exception as e:
+        logger.error(f"Error integrating with MCP server: {e}")
+        return jsonify({'error': 'Failed to integrate with MCP server'}), 500
+
+@app.route('/api/register', methods=['POST'])
+def register():
+    """Endpoint to register a new user."""
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        if not username or not password:
+            return jsonify({'error': 'Missing username or password'}), 400
+
+        hashed_password = generate_password_hash(password)
+        # Placeholder for actual user registration logic
+        return jsonify({'message': 'User registered successfully'})
+    except Exception as e:
+        logger.error(f"Error registering user: {e}")
+        return jsonify({'error': 'Failed to register user'}), 500
+
+@app.route('/api/login', methods=['POST'])
+def login():
+    """Endpoint to login a user."""
+    try:
+        data = request.json
+        username = data.get('username')
+        password = data.get('password')
+        if not username or not password:
+            return jsonify({'error': 'Missing username or password'}), 400
+
+        # Placeholder for actual user authentication logic
+        if username == 'test' and check_password_hash(generate_password_hash('test'), password):
+            access_token = create_access_token(identity=username)
+            return jsonify({'access_token': access_token})
+        else:
+            return jsonify({'error': 'Invalid credentials'}), 401
+    except Exception as e:
+        logger.error(f"Error logging in user: {e}")
+        return jsonify({'error': 'Failed to login user'}), 500
+
+@app.route('/api/protected', methods=['GET'])
+@jwt_required()
+def protected():
+    """Protected endpoint accessible only to authenticated users."""
+    current_user = get_jwt_identity()
+    return jsonify({'message': f'Hello, {current_user}!'})
+
+@socketio.on('connect')
+def handle_connect():
+    emit('message', {'data': 'Connected to server'})
+
+@socketio.on('disconnect')
+def handle_disconnect():
+    print('Client disconnected')
+
+@socketio.on('new_comment')
+def handle_new_comment(data):
+    emit('new_comment', data, broadcast=True)
+
 if __name__ == '__main__':
     is_production = os.environ.get('FLASK_ENV') == 'production'
     port = int(os.environ.get('PORT', 5000))
@@ -168,8 +361,4 @@ if __name__ == '__main__':
     if not os.path.exists('temp'):
         os.makedirs('temp')
         
-    app.run(
-        host='0.0.0.0',
-        port=port,
-        debug=not is_production
-    )
+    socketio.run(app, host='0.0.0.0', port=port, debug=not is_production)
