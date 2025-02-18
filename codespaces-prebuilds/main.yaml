@@ -17,9 +17,22 @@ jobs:
       - name: Setup Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.9"
+          python-version: "3.8-3.10"  # Specify a range of Python versions for flexibility
+
+      - name: Cache Python Dependencies
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
 
       - name: Install Python Dependencies
         run: |
           pip install -r requirements.txt
-          python -m nltk.downloader punkt vader_lexicon
+
+      - name: Download and Cache NLTK Data
+        run: |
+          python -m nltk.downloader -d /usr/share/nltk_data punkt vader_lexicon
+        env:
+          NLTK_DATA: /usr/share/nltk_data
