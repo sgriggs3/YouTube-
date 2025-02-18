@@ -32,42 +32,139 @@ A# Optimized Workflow for YouTube Insight Analyzer
     ```
     *   Update the `.env` file with any necessary environment variables.
 
-## Backend Development
+## Detailed Tasks
+
+### Backend Development
 
 1.  **YouTube API Integration:**
-    *   Implement functions to fetch video metadata, comments, and transcripts using the YouTube API.
-    *   Handle API rate limits and errors gracefully.
-    *   Store fetched data in a structured format.
+    *   **Task:** Implement functions to fetch video metadata, comments, and transcripts using the YouTube API.
+    *   **Instructions:**
+        *   Use the `youtube_api.py` file in the `backend` directory.
+        *   Implement functions to fetch video details, comments, and transcripts.
+        *   Handle API rate limits and errors gracefully using exponential backoff.
+        *   Store fetched data in a structured format (e.g., dictionaries or dataclasses).
+    *   **Example:**
+        ```python
+        # backend/youtube_api.py
+        from googleapiclient.discovery import build
+        import os
+
+        DEVELOPER_KEY = os.environ.get("YOUTUBE_API_KEY")
+        YOUTUBE_API_SERVICE_NAME = "youtube"
+        YOUTUBE_API_VERSION = "v3"
+
+        def get_video_details(video_id):
+            youtube = build(YOUTUBE_API_SERVICE_NAME, YOUTUBE_API_VERSION, developerKey=DEVELOPER_KEY)
+            request = youtube.videos().list(
+                part="snippet,contentDetails,statistics",
+                id=video_id
+            )
+            response = request.execute()
+            return response
+        ```
 
 2.  **Sentiment Analysis:**
-    *   Implement sentiment analysis on video comments and transcripts.
-    *   Use suitable NLP libraries like NLTK, spaCy, or transformers.
-    *   Store sentiment scores along with the corresponding text.
+    *   **Task:** Implement sentiment analysis on video comments and transcripts.
+    *   **Instructions:**
+        *   Use the `sentiment_analysis.py` file in the `backend` directory.
+        *   Use suitable NLP libraries like NLTK, spaCy, or transformers.
+        *   Implement functions to analyze the sentiment of comments and transcripts.
+        *   Store sentiment scores along with the corresponding text.
+    *   **Example:**
+        ```python
+        # backend/sentiment_analysis.py
+        from transformers import pipeline
+
+        def analyze_sentiment(text):
+            sentiment_pipeline = pipeline("sentiment-analysis")
+            result = sentiment_pipeline(text)[0]
+            return result
+        ```
 
 3.  **Data Storage:**
-    *   Choose a suitable data storage mechanism (e.g., SQLite, PostgreSQL, JSON files).
-    *   Implement functions to store and retrieve data.
-    *   Ensure data integrity and consistency.
+    *   **Task:** Choose a suitable data storage mechanism (e.g., SQLite, PostgreSQL, JSON files).
+    *   **Instructions:**
+        *   Implement functions to store and retrieve data.
+        *   Ensure data integrity and consistency.
+        *   Use a database or file storage system to store video metadata, comments, transcripts, and sentiment scores.
+    *   **Example:**
+        ```python
+        # backend/app.py
+        import json
+
+        def store_data(data, filename="data.json"):
+            with open(filename, 'w') as f:
+                json.dump(data, f, indent=4)
+        ```
 
 4.  **API Endpoints:**
-    *   Create API endpoints for fetching video metadata, comments, sentiment analysis results, and data visualizations.
-    *   Implement proper error handling and response codes.
+    *   **Task:** Create API endpoints for fetching video metadata, comments, sentiment analysis results, and data visualizations.
+    *   **Instructions:**
+        *   Use the Flask framework in the `app.py` file in the `backend` directory.
+        *   Create API endpoints for fetching video metadata, comments, sentiment analysis results, and data visualizations.
+        *   Implement proper error handling and response codes.
+    *   **Example:**
+        ```python
+        # backend/app.py
+        from flask import Flask, jsonify
 
-## Frontend Development
+        app = Flask(__name__)
+
+        @app.route('/api/video/<video_id>')
+        def get_video_data(video_id):
+            # Fetch video data and return as JSON
+            return jsonify({"video_id": video_id, "title": "Example Video"})
+        ```
+
+### Frontend Development
 
 1.  **User Interface Design:**
-    *   Design a clean and intuitive user interface using React and Material-UI.
-    *   Create wireframes or mockups for the web pages.
-    *   Ensure the UI is responsive and accessible.
+    *   **Task:** Design a clean and intuitive user interface using React and Material-UI.
+    *   **Instructions:**
+        *   Use the `frontend` directory.
+        *   Create wireframes or mockups for the web pages.
+        *   Ensure the UI is responsive and accessible.
+    *   **Example:**
+        *   Use Material-UI components for a consistent and modern look.
 
 2.  **Web Pages:**
-    *   Create pages for entering YouTube video URLs, displaying video metadata, sentiment analysis results, and data visualizations.
-    *   Create a configuration page for setting API keys and other settings.
+    *   **Task:** Create pages for entering YouTube video URLs, displaying video metadata, sentiment analysis results, and data visualizations.
+    *   **Instructions:**
+        *   Create React components for each page.
+        *   Use the `src/pages` directory in the `frontend` directory.
+        *   Implement routing using React Router.
+    *   **Example:**
+        ```javascript
+        // frontend/src/pages/Analysis.js
+        import React from 'react';
+
+        function Analysis() {
+            return (
+                <div>
+                    <h1>Analysis Page</h1>
+                    {/* Add content here */}
+                </div>
+            );
+        }
+
+        export default Analysis;
+        ```
 
 3.  **API Integration:**
-    *   Use JavaScript to make API calls to the backend.
-    *   Display data received from the API in the UI.
-    *   Handle API errors gracefully.
+    *   **Task:** Use JavaScript to make API calls to the backend.
+    *   **Instructions:**
+        *   Use the `fetch` API or Axios to make HTTP requests to the backend.
+        *   Display data received from the API in the UI.
+        *   Handle API errors gracefully.
+    *   **Example:**
+        ```javascript
+        // frontend/src/services/api.js
+        async function getVideoData(videoId) {
+            const response = await fetch(`/api/video/${videoId}`);
+            const data = await response.json();
+            return data;
+        }
+        ```
 
 ## Settings Page
 
