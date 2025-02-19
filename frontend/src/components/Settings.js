@@ -10,7 +10,7 @@ const Settings = () => {
   });
 
   const handleLogin = () => {
-    // Placeholder authentication logic
+    // Implementing a basic authentication logic
     if (username === 'admin' && password === 'password') {
       setIsAuthenticated(true);
     } else {

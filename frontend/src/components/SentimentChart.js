@@ -1,11 +1,12 @@
 // Import necessary libraries and components
 import React, { useEffect, useState } from 'react';
-import { Line, Bar, Pie } from 'react-chartjs-2';
+import { Line, Bar, Pie, Doughnut, Radar } from 'react-chartjs-2';
 import Chart from 'chart.js/auto';
 
 // Define the SentimentChart component
-const SentimentChart = ({ data, type }) => {
+const SentimentChart = ({ data, initialType }) => {
   const [chartData, setChartData] = useState(data);
+  const [chartType, setChartType] = useState(initialType);
 
   // Function to update chart data in real-time
   const updateChartData = () => {
@@ -38,23 +39,39 @@ const SentimentChart = ({ data, type }) => {
     ],
   };
 
-  // Render the appropriate chart type based on the 'type' prop
+  // Render the appropriate chart type based on the 'chartType' state
   const renderChart = () => {
-    switch (type) {
+    switch (chartType) {
       case 'line':
         return <Line data={chartConfig} />;
       case 'bar':
         return <Bar data={chartConfig} />;
       case 'pie':
         return <Pie data={chartConfig} />;
+      case 'doughnut':
+        return <Doughnut data={chartConfig} />;
+      case 'radar':
+        return <Radar data={chartConfig} />;
       default:
         return <Line data={chartConfig} />;
     }
   };
 
+  // Handle chart type change
+  const handleChartTypeChange = (event) => {
+    setChartType(event.target.value);
+  };
+
   return (
     <div>
       <h2>Sentiment Chart</h2>
+      <select onChange={handleChartTypeChange} value={chartType}>
+        <option value="line">Line</option>
+        <option value="bar">Bar</option>
+        <option value="pie">Pie</option>
+        <option value="doughnut">Doughnut</option>
+        <option value="radar">Radar</option>
+      </select>
       {renderChart()}
     </div>
   );

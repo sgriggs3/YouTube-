@@ -189,3 +189,31 @@ def create_scatter_plot(data: pd.DataFrame, x_col: str, y_col: str, color_col: s
     except Exception as e:
         logger.error(f"Error creating scatter plot: {e}")
         raise
+
+def stream_real_time_data(fig: go.Figure, data_stream: Any, update_interval: int = 1000) -> None:
+    """Stream real-time data to a Plotly figure."""
+    try:
+        # This is a placeholder for real-time data streaming logic.
+        # The data_stream should be an iterable or generator that yields data updates.
+        for data in data_stream:
+            # Update the figure with new data
+            # Example: fig.data[0].x = new_x_data, fig.data[0].y = new_y_data
+            fig.update_traces(x=data['x'], y=data['y'])
+            fig.show()
+            # Wait for the specified update interval
+            plt.pause(update_interval / 1000.0)
+    except Exception as e:
+        logger.error(f"Error streaming real-time data: {e}")
+        raise
+
+def customize_visualization(fig: go.Figure, metrics: List[str], time_range: Dict[str, Any]) -> None:
+    """Allow users to customize visualizations by selecting metrics or time ranges."""
+    try:
+        # Filter data based on selected metrics and time range
+        # This is a placeholder for customization logic
+        # Example: fig.data = [trace for trace in fig.data if trace.name in metrics]
+        # Apply time range filtering if applicable
+        fig.update_layout(title=f"Customized Visualization: {', '.join(metrics)}")
+    except Exception as e:
+        logger.error(f"Error customizing visualization: {e}")
+        raise

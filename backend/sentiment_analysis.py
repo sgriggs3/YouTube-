@@ -12,14 +12,14 @@ logger = logging.getLogger(__name__)
 thread_local = threading.local()
 
 def get_analyzers():
-    """Get or initialize thread-local sentiment analyzers."""
+    """Get or initialize thread-local sentiment analyzers with advanced models."""
     if not hasattr(thread_local, "analyzers"):
         try:
             device = 0 if torch.cuda.is_available() else -1
             thread_local.analyzers = {
-                "transformer": pipeline("sentiment-analysis", model="bert-base-uncased", device=device),
-                "aspect": pipeline("zero-shot-classification", model="roberta-base", device=device),
-                "emotion": pipeline("text-classification", model="bhadresh-savani/distilbert-base-uncased-emotion", device=device)
+                "transformer": pipeline("sentiment-analysis", model="nlptown/bert-base-multilingual-uncased-sentiment", device=device),
+                "aspect": pipeline("zero-shot-classification", model="facebook/bart-large-mnli", device=device),
+                "emotion": pipeline("text-classification", model="j-hartmann/emotion-english-distilroberta-base", device=device)
             }
         except Exception as e:
             logger.error(f"Failed to initialize analyzers: {e}")
@@ -43,27 +43,27 @@ def analyze_sentiment(text):
     
     # Transformer sentiment analysis
     try:
-        transformer_result = analyzers["transformer"](text)[0]
+        transformer_result = analyzers["transformer"](text, truncation=True)[0]
     except Exception as e:
         logger.error(f"Transformer sentiment analysis failed: {e}")
         transformer_result = {"label": "NEUTRAL", "score": 0.5}
     
     # Aspect-based sentiment analysis
     try:
-        aspect_result = analyzers["aspect"](text, candidate_labels=["service", "price", "quality", "location"])
+        aspect_result = analyzers["aspect"](text, candidate_labels=["service", "price", "quality", "location"], multi_label=True)
     except Exception as e:
         logger.error(f"Aspect-based analysis failed: {e}")
         aspect_result = {"labels": [], "scores": []}
     
     # Emotion detection
     try:
-        emotion_result = analyzers["emotion"](text)[0]
+        emotion_result = analyzers["emotion"](text, truncation=True)[0]
     except Exception as e:
         logger.error(f"Emotion detection failed: {e}")
         emotion_result = {"label": "neutral", "score": 0.5}
     
-    # Combine scores
-    combined_score = (transformer_result["score"] + emotion_result["score"]) / 2
+    # Combine scores using ensemble method
+    combined_score = np.mean([transformer_result["score"], emotion_result["score"]])
 
     return {
         "transformer": transformer_result,
